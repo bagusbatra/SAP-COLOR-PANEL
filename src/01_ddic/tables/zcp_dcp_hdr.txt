@@ -1,0 +1,42 @@
+TABLE ZCP_DCP_HDR
+Short Description: Color Panel - Header DCP
+Delivery Class: A
+Data Class: APPL0   Size Category: 1
+Table View Maintenance: Display/Maintenance Allowed
+
+Field           Key  Data Element / Type   Keterangan
+--------------------------------------------------------------------
+MANDT           X    MANDT                 Client
+DCP_ID          X    ZCP_DE_DCP_ID         DCP-YYYY-NNNN
+REQUEST_ID           ZCP_DE_REQUEST_ID     FK ke ZCP_REQUEST
+SO_NUMBER            VBELN                 Nomor SO
+SO_ITEM              POSNR                 Nomor item SO
+MATNR                MATNR                 Material
+MAKTX                MAKTX                 Snapshot deskripsi
+COLOR_CODE           ZCP_DE_COLOR_CODE     FK ke ZCP_COLOR_CODE
+BUYER_ID             ZCP_DE_BUYER_ID       Buyer
+SALES_USER           ZCP_DE_USER_ID        Sales pengaju
+QTY_TOTAL            INT4                  Dari VBAP-KWMENG
+MFG_DATE             DATUM                 Tanggal aktivasi panel pertama
+EXPIRE_DATE          DATUM                 MFG_DATE + 1 tahun
+REMINDER_DATE        DATUM                 CREATED_AT + 2 bulan
+STATUS               ZCP_DE_DCP_ST         O open / C closed / R rejected
+CLOSE_REASON         ZCP_DE_REASON         Wajib diisi bila STATUS = R
+CLOSED_BY            ZCP_DE_USER_ID        USER_ID
+CLOSED_AT            TIMESTAMP             Waktu close
+REMARKS              ZCP_DE_REMARKS        Catatan
+CREATED_BY           ZCP_DE_USER_ID        USER_ID, bukan SY-UNAME
+CREATED_AT           TIMESTAMP             Waktu dibuat
+CHANGED_BY           ZCP_DE_USER_ID        USER_ID
+CHANGED_AT           TIMESTAMP             Waktu ubah
+
+INDEX REQ (non-unique)
+  MANDT, REQUEST_ID
+  Alasan: halaman daftar DCP menampilkan seluruh DCP milik satu request.
+
+Catatan: kolom QTY_ACTIVE / QTY_APPROVED / QTY_REJECTED dari deklarasi
+21 Juli TIDAK dipakai. Angka-angka itu dihitung dari ZCP_DCP_ITEM saat
+dibutuhkan, supaya tidak pernah ada keadaan di mana penghitung dan
+kenyataan berbeda.
+
+Catatan: satu baris per material. Satu request menghasilkan N DCP header.

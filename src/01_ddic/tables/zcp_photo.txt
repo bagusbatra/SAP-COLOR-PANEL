@@ -1,0 +1,34 @@
+TABLE ZCP_PHOTO
+Short Description: Color Panel - Foto Panel
+Delivery Class: A
+Data Class: APPL0   Size Category: 3
+Table View Maintenance: Display/Maintenance Allowed
+
+Field           Key  Data Element / Type   Keterangan
+--------------------------------------------------------------------
+MANDT           X    MANDT                 Client
+PHOTO_ID        X    ZCP_DE_PHOTO_ID       PH + 9 digit
+REF_TYPE             CHAR4                 DCP, MCP menyusul
+REF_ID               CHAR20                DCP_ID
+PANEL_NUMBER         ZCP_DE_PANEL_NUMBER   Nomor panel
+PHOTO_SEQ            INT4                  Urutan 1, 2, 3, dst
+FILE_NAME            CHAR100               Nama file asli
+MIME_TYPE            CHAR40                image/jpeg, image/png
+FILE_SIZE            INT4                  Ukuran dalam byte
+PHOTO_DATA           RAWSTRING             Isi file, sementara sampai sub-proyek 4
+DMS_DOC_TYPE         CHAR4                 Kosong sampai sub-proyek 4, nanti ZDCP
+DMS_DOCNUM           CHAR25                Kosong sampai sub-proyek 4
+DMS_DOCPART          CHAR3                 Kosong sampai sub-proyek 4
+DMS_DOCVERS          CHAR2                 Kosong sampai sub-proyek 4
+UPLOADED_BY          ZCP_DE_USER_ID        USER_ID, bukan SY-UNAME
+UPLOADED_AT          TIMESTAMP             Waktu unggah
+
+INDEX REF (non-unique)
+  MANDT, REF_TYPE, REF_ID, PANEL_NUMBER
+  Alasan: halaman detail panel selalu mengambil foto lewat keempat kolom ini.
+
+Catatan: Size Category 3 karena PHOTO_DATA menyimpan isi file sampai
+sub-proyek 4 memindahkannya ke DMS.
+
+Catatan: batas ukuran maksimum 2 MB per foto, divalidasi di sisi klien dan
+diulang di server. Validasi klien saja tidak cukup, gampang dilewati.

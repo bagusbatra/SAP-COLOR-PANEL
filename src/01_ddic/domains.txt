@@ -1,0 +1,43 @@
+DOMAIN ZCP_DOM_ROLE
+  Data Type CHAR  Length 10
+  Value Range (Fixed Values):
+    SALES   Sales Representative
+    ADMIN   Admin Color
+    IT      IT Support
+
+DOMAIN ZCP_DOM_REQ_ST
+  Data Type CHAR  Length 1
+  Value Range (Fixed Values):
+    P   Pending
+    C   Closed
+
+DOMAIN ZCP_DOM_ITM_ST
+  Data Type CHAR  Length 1
+  Value Range (Fixed Values):
+    P   Pending
+    A   Approved
+    R   Rejected
+
+DOMAIN ZCP_DOM_DCP_ST
+  Data Type CHAR  Length 1
+  Value Range (Fixed Values):
+    O   Open
+    C   Closed
+    R   Rejected
+
+DOMAIN ZCP_DOM_PANEL_ST
+  Data Type CHAR  Length 2
+  Value Range (Fixed Values):
+    NA  Non-Aktif
+    AK  Aktif
+    SB  Submitted
+    AP  Approved
+    RJ  Rejected
+    OB  Obsolete
+
+DOMAIN ZCP_DOM_CC_ST
+  Data Type CHAR  Length 1
+  Value Range (Fixed Values):
+    A   Aktif
+    I   Non-Aktif
+    O   Obsolete

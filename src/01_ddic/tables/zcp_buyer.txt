@@ -1,0 +1,28 @@
+TABLE ZCP_BUYER
+Short Description: Color Panel - Master Buyer
+Delivery Class: A
+Data Class: APPL1   Size Category: 1
+Table View Maintenance: Display/Maintenance Allowed
+
+Field           Key  Data Element / Type   Keterangan
+--------------------------------------------------------------------
+MANDT           X    MANDT                 Client
+BUYER_ID        X    ZCP_DE_BUYER_ID       ID buyer
+BUYER_NAME           CHAR60                Nama buyer
+COMPANY              CHAR60                Nama perusahaan
+COUNTRY              LAND1                 Kode negara
+CONTACT              CHAR60                Nama kontak
+EMAIL                CHAR100               Alamat surel
+PHONE                CHAR20                Nomor telepon
+IS_ACTIVE            CHAR1                 X = aktif
+REMARKS              ZCP_DE_REMARKS        Catatan
+CREATED_BY           ZCP_DE_USER_ID        USER_ID, bukan SY-UNAME
+CREATED_AT           TIMESTAMP             Waktu dibuat
+CHANGED_BY           ZCP_DE_USER_ID        USER_ID
+CHANGED_AT           TIMESTAMP             Waktu ubah
+
+Tidak ada secondary index.
+
+Catatan: satu-satunya tabel yang dibuatkan Table Maintenance Generator.
+Function Group ZFGP_COLOR_PANEL, authorization group &NC&, one-step.
+Dimaintain lewat SM30, tanpa halaman BSP.

@@ -1,0 +1,29 @@
+TABLE ZCP_REQUEST
+Short Description: Color Panel - Request DCP Header
+Delivery Class: A
+Data Class: APPL0   Size Category: 1
+Table View Maintenance: Display/Maintenance Allowed
+
+Field           Key  Data Element / Type   Keterangan
+--------------------------------------------------------------------
+MANDT           X    MANDT                 Client
+REQUEST_ID      X    ZCP_DE_REQUEST_ID     REQ-YYYY-NNNN
+SO_NUMBER            VBELN                 Nomor SO referensi
+SALES_USER           ZCP_DE_USER_ID        USER_ID role SALES
+BUYER_ID             ZCP_DE_BUYER_ID       Buyer
+REQUEST_DATE         DATUM                 Tanggal request
+STATUS               ZCP_DE_REQ_ST         P pending / C closed
+REMARKS              ZCP_DE_REMARKS        Catatan
+CREATED_BY           ZCP_DE_USER_ID        USER_ID, bukan SY-UNAME
+CREATED_AT           TIMESTAMP             Waktu dibuat
+CHANGED_BY           ZCP_DE_USER_ID        USER_ID
+CHANGED_AT           TIMESTAMP             Waktu ubah
+
+INDEX SO (non-unique)
+  MANDT, SO_NUMBER
+  Sengaja non-unique: material yang ditolak harus bisa diajukan ulang dalam
+  request baru dengan nomor SO yang sama.
+
+Catatan: STATUS tidak diputuskan sendiri oleh halaman. Nilainya diturunkan
+dari status seluruh ZCP_REQUEST_ITM milik request ini, lihat spec 5.1.
+Selama masih ada item berstatus P, header tetap P.

@@ -1,0 +1,32 @@
+TABLE ZCP_USER
+Short Description: Color Panel - User dan Role
+Delivery Class: A
+Data Class: APPL1   Size Category: 1
+Table View Maintenance: Display/Maintenance Allowed
+
+Field           Key  Data Element / Type   Keterangan
+--------------------------------------------------------------------
+MANDT           X    MANDT                 Client
+USER_ID         X    ZCP_DE_USER_ID        ID login
+FULL_NAME            CHAR60                Nama lengkap
+PASSWORD_HASH        ZCP_DE_HASH           SHA256, disimpan sebagai string
+ROLE                 ZCP_DE_ROLE           SALES / ADMIN / IT
+BUYER_ID             ZCP_DE_BUYER_ID       Diisi khusus role SALES
+EMAIL                CHAR100               Alamat surel
+PHONE                CHAR20                Nomor telepon
+IS_ACTIVE            CHAR1                 X = aktif
+LAST_LOGIN           TIMESTAMP             Waktu login terakhir
+CREATED_BY           ZCP_DE_USER_ID        USER_ID, bukan SY-UNAME
+CREATED_AT           TIMESTAMP             Waktu dibuat
+CHANGED_BY           ZCP_DE_USER_ID        USER_ID
+CHANGED_AT           TIMESTAMP             Waktu ubah
+
+Tidak ada secondary index.
+
+Catatan: satu user satu role. Multi-role tidak didukung di sub-proyek 1.
+Kalau nanti dibutuhkan, ditambahkan tabel penghubung, bukan string
+comma-separated di kolom ROLE.
+
+Catatan: baris pertama tidak bisa dibuat lewat SM30 karena password harus
+di-hash lebih dulu. User perdana dibuat lewat report sementara yang memanggil
+ZCL_CP_AUTH=>hash_password. Lihat Task 6 Step 5.

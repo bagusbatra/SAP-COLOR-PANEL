@@ -1,0 +1,31 @@
+TABLE ZCP_AUDIT_LOG
+Short Description: Color Panel - Audit Trail
+Delivery Class: A
+Data Class: APPL0   Size Category: 3
+Table View Maintenance: Display/Maintenance Allowed
+
+Field           Key  Data Element / Type   Keterangan
+--------------------------------------------------------------------
+MANDT           X    MANDT                 Client
+LOG_ID          X    ZCP_DE_LOG_ID         LOG + 12 digit, berurutan via SNRO
+REF_TYPE             CHAR4                 REQ / DCP / USER / AUTH
+REF_ID               CHAR20                ID objek yang dicatat
+PANEL_NUMBER         ZCP_DE_PANEL_NUMBER   Diisi bila aksi menyangkut satu panel
+ACTION               CHAR20                LOGIN, LOGIN_FAIL, CREATE, APPROVE,
+                                           REJECT, ACTIVATE, SUBMIT, UNDO, CLOSE
+OLD_VALUE            ZCP_DE_REMARKS        Nilai sebelum
+NEW_VALUE            ZCP_DE_REMARKS        Nilai sesudah
+DESCRIPTION          ZCP_DE_REMARKS        Keterangan bebas
+ACTION_BY            ZCP_DE_USER_ID        USER_ID, bukan SY-UNAME
+ACTION_AT            TIMESTAMP             Waktu aksi
+IP_ADDRESS           CHAR45                Panjang 45 agar muat IPv6
+
+INDEX REF (non-unique)
+  MANDT, REF_TYPE, REF_ID
+  Alasan: riwayat sebuah DCP atau Request dibaca lewat pasangan kolom ini.
+
+Catatan: Size Category 3 karena tabel ini tumbuh terus dan tidak pernah
+dihapus.
+
+Catatan: ZCL_CP_AUDIT=>log tidak melempar exception. Kegagalan menulis jejak
+tidak boleh membatalkan transaksi bisnis yang sudah sah.

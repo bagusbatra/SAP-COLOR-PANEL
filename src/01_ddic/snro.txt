@@ -1,0 +1,22 @@
+SNRO OBJECT ZCP_COLOR       Number Length 5    To-Year Flag: NO
+  Interval 01: 00001 - 99999
+  Dipakai: ZCL_CP_NUMBER=>next_color_code, hasil "KW00001"
+
+SNRO OBJECT ZCP_REQ         Number Length 4    To-Year Flag: YES
+  Interval 01: 0001 - 9999   (per tahun)
+  Dipakai: ZCL_CP_NUMBER=>next_request_id, hasil "REQ-2026-0001"
+
+SNRO OBJECT ZCP_DCP         Number Length 4    To-Year Flag: YES
+  Interval 01: 0001 - 9999   (per tahun)
+  Dipakai: ZCL_CP_NUMBER=>next_dcp_id, hasil "DCP-2026-0001"
+
+SNRO OBJECT ZCP_PHOTO       Number Length 9    To-Year Flag: NO
+  Interval 01: 000000001 - 999999999
+  Dipakai: ZCL_CP_NUMBER=>next_photo_id, hasil "PH000000001"
+
+SNRO OBJECT ZCP_AUDIT       Number Length 12   To-Year Flag: NO
+  Interval 01: 000000000001 - 999999999999
+  Dipakai: ZCL_CP_NUMBER=>next_log_id, hasil "LOG000000000001"
+
+Catatan: To-Year Flag YES berarti pemanggilan NUMBER_GET_NEXT wajib mengisi
+parameter TOYEAR, dan penomoran mulai dari 0001 lagi tiap tahun.

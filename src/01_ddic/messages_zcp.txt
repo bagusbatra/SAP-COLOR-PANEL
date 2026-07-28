@@ -1,0 +1,24 @@
+MESSAGE CLASS ZCP - Color Panel
+
+No   Text
+-----------------------------------------------------------------------
+001  SO &1 tidak ditemukan
+002  SO &1 tidak memiliki material yang layak dijadikan DCP
+003  Material &1 sudah memiliki Color Code &2
+004  SO item &1 sudah diproses menjadi DCP &2
+005  SO item &1 sudah diproses oleh &2 pada &3
+006  User atau password salah
+007  Session sudah berakhir, silakan login ulang
+008  Anda tidak memiliki akses ke halaman ini
+009  Panel &1 tidak dapat diubah dari status &2 ke status &3
+010  Panel &1 membutuhkan minimal 2 foto sebelum submit
+011  DCP &1 tidak dapat di-close, belum ada panel yang approved
+012  Undo tidak diizinkan, DCP &1 sudah di-close
+013  Tanggal pembuatan tidak boleh di masa depan
+014  Ukuran file &1 melebihi batas 2 MB
+015  Tipe file &1 tidak diizinkan, hanya JPEG dan PNG
+016  Alasan wajib diisi
+017  Request &1 tidak ditemukan
+018  DCP &1 tidak ditemukan
+019  Terjadi kesalahan saat menyimpan, perubahan dibatalkan
+020  User &1 sudah terdaftar

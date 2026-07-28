@@ -1,0 +1,28 @@
+TABLE ZCP_REQUEST_ITM
+Short Description: Color Panel - Item Request per Material
+Delivery Class: A
+Data Class: APPL0   Size Category: 1
+Table View Maintenance: Display/Maintenance Allowed
+
+Field           Key  Data Element / Type   Keterangan
+--------------------------------------------------------------------
+MANDT           X    MANDT                 Client
+REQUEST_ID      X    ZCP_DE_REQUEST_ID     FK ke ZCP_REQUEST
+SO_ITEM         X    POSNR                 Nomor item SO, 000010 dst
+MATNR                MATNR                 Material dari VBAP
+MAKTX                MAKTX                 Snapshot deskripsi
+MENGE                MENGE_D               Qty dari VBAP-KWMENG
+MEINS                MEINS                 Satuan
+STATUS               ZCP_DE_ITM_ST         P pending / A approved / R rejected
+REJECT_REASON        ZCP_DE_REASON         Wajib diisi bila STATUS = R
+DECIDED_BY           ZCP_DE_USER_ID        Admin yang memutuskan
+DECIDED_AT           TIMESTAMP             Waktu keputusan
+DCP_ID               ZCP_DE_DCP_ID         Terisi bila STATUS = A
+COLOR_CODE           ZCP_DE_COLOR_CODE     Terisi bila STATUS = A
+CREATED_AT           TIMESTAMP             Waktu dibuat
+
+Tidak ada secondary index.
+
+Catatan: keputusan Admin dicatat per item, bukan per request. Satu SO bisa
+punya sebagian material approved dan sebagian rejected. Inilah alasan
+ZCP_REQUEST-STATUS dihitung, bukan disimpan sebagai keputusan tersendiri.

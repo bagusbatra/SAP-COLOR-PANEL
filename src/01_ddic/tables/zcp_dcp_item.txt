@@ -1,0 +1,35 @@
+TABLE ZCP_DCP_ITEM
+Short Description: Color Panel - Panel Fisik DCP
+Delivery Class: A
+Data Class: APPL0   Size Category: 1
+Table View Maintenance: Display/Maintenance Allowed
+
+Field           Key  Data Element / Type   Keterangan
+--------------------------------------------------------------------
+MANDT           X    MANDT                 Client
+DCP_ID          X    ZCP_DE_DCP_ID         FK ke ZCP_DCP_HDR
+PANEL_NUMBER    X    ZCP_DE_PANEL_NUMBER   001..NNN sesuai qty
+PANEL_ID             ZCP_DE_PANEL_ID       DCP-YYYY-NNNN-001
+QR_TOKEN             CHAR64                Dibuat sekarang, dipakai sub-proyek 4
+STATUS               ZCP_DE_PANEL_ST       NA / AK / SB / AP / RJ / OB
+MFG_DATE             DATUM                 Diisi Admin saat aktivasi
+ACTIVATED_BY         ZCP_DE_USER_ID        USER_ID
+ACTIVATED_AT         TIMESTAMP             Waktu aktivasi
+SUBMITTED_BY         ZCP_DE_USER_ID        USER_ID
+SUBMITTED_AT         TIMESTAMP             Waktu submit
+APPROVED_BY          ZCP_DE_USER_ID        USER_ID
+APPROVED_AT          TIMESTAMP             Waktu approve
+REJECTED_BY          ZCP_DE_USER_ID        USER_ID
+REJECTED_AT          TIMESTAMP             Waktu reject
+REJECT_REASON        ZCP_DE_REASON         Alasan penolakan
+UNDO_COUNT           INT4                  Berapa kali panel ini di-undo
+REMARKS              ZCP_DE_REMARKS        Catatan
+CREATED_AT           TIMESTAMP             Waktu dibuat
+CHANGED_BY           ZCP_DE_USER_ID        USER_ID
+CHANGED_AT           TIMESTAMP             Waktu ubah
+
+INDEX PID (UNIQUE)
+  MANDT, PANEL_ID
+  Alasan: PANEL_ID tercetak di stiker fisik, tidak boleh kembar.
+
+Catatan: kolom MCP_ID menyusul di sub-proyek 2, jangan dibuat sekarang.

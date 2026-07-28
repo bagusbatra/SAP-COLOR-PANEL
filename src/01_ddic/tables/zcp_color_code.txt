@@ -1,0 +1,31 @@
+TABLE ZCP_COLOR_CODE
+Short Description: Color Panel - Master Color Code
+Delivery Class: A
+Data Class: APPL1   Size Category: 1
+Table View Maintenance: Display/Maintenance Allowed
+
+Field           Key  Data Element / Type   Keterangan
+--------------------------------------------------------------------
+MANDT           X    MANDT                 Client
+COLOR_CODE      X    ZCP_DE_COLOR_CODE     KW + 5 digit
+MATNR                MATNR                 FERT Material Number
+MAKTX                MAKTX                 Snapshot deskripsi material
+BUYER_ID             ZCP_DE_BUYER_ID       Buyer
+COLOR_NAME           CHAR60                Nama warna
+COLOR_HEX            CHAR7                 #RRGGBB, opsional
+COMPONENT            CHAR40                Solid / veneer
+STATUS               ZCP_DE_CC_ST          A / I / O
+SOURCE_DCP_ID        ZCP_DE_DCP_ID         DCP yang melahirkan Color Code
+REMARKS              ZCP_DE_REMARKS        Catatan
+CREATED_BY           ZCP_DE_USER_ID        USER_ID, bukan SY-UNAME
+CREATED_AT           TIMESTAMP             Waktu dibuat
+CHANGED_BY           ZCP_DE_USER_ID        USER_ID
+CHANGED_AT           TIMESTAMP             Waktu ubah
+
+INDEX MAT (UNIQUE)
+  MANDT, MATNR
+  Alasan: memaksa aturan 1:1 FERT di level database. Tanpa index ini,
+  dua proses paralel bisa membuat dua Color Code untuk satu material.
+
+Catatan: entitas informasi, tanpa panel fisik. Panel fisik tinggal di
+ZCP_DCP_ITEM.

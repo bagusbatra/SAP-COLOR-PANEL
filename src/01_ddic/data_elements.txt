@@ -1,0 +1,24 @@
+Data Element          Domain / Type      Field Label (Medium)
+--------------------------------------------------------------------
+ZCP_DE_USER_ID        CHAR20             User ID
+ZCP_DE_ROLE           ZCP_DOM_ROLE       Role
+ZCP_DE_BUYER_ID       CHAR10             Buyer ID
+ZCP_DE_COLOR_CODE     CHAR20             Color Code
+ZCP_DE_REQUEST_ID     CHAR20             Request ID
+ZCP_DE_DCP_ID         CHAR20             DCP ID
+ZCP_DE_PANEL_ID       CHAR30             Panel ID
+ZCP_DE_PANEL_NUMBER   NUMC3              Nomor Panel
+ZCP_DE_PHOTO_ID       CHAR20             Photo ID
+ZCP_DE_LOG_ID         CHAR20             Log ID
+ZCP_DE_REQ_ST         ZCP_DOM_REQ_ST     Status Request
+ZCP_DE_ITM_ST         ZCP_DOM_ITM_ST     Status Item
+ZCP_DE_DCP_ST         ZCP_DOM_DCP_ST     Status DCP
+ZCP_DE_PANEL_ST       ZCP_DOM_PANEL_ST   Status Panel
+ZCP_DE_CC_ST          ZCP_DOM_CC_ST      Status Color Code
+ZCP_DE_REASON         CHAR200            Alasan
+ZCP_DE_REMARKS        CHAR200            Catatan
+ZCP_DE_HASH           CHAR64             Password Hash
+
+Catatan: field yang sudah punya data element standar SAP memakai yang standar,
+tidak dibuatkan ZCP_DE_ sendiri:
+  MATNR, MAKTX, VBELN, POSNR, MENGE_D, MEINS, LAND1, DATUM, TIMESTAMP

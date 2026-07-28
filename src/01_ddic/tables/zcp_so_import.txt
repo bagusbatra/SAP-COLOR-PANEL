@@ -1,0 +1,28 @@
+TABLE ZCP_SO_IMPORT
+Short Description: Color Panel - Kunci Anti-Duplikat SO Item
+Delivery Class: A
+Data Class: APPL0   Size Category: 1
+Table View Maintenance: Display/Maintenance Allowed
+
+Field           Key  Data Element / Type   Keterangan
+--------------------------------------------------------------------
+MANDT           X    MANDT                 Client
+SO_NUMBER       X    VBELN                 Nomor SO
+SO_ITEM         X    POSNR                 Nomor item SO
+MATNR                MATNR                 Material
+MENGE                MENGE_D               Qty
+MEINS                MEINS                 Satuan
+REQUEST_ID           ZCP_DE_REQUEST_ID     Request yang memakai item ini
+DCP_ID               ZCP_DE_DCP_ID         DCP hasil
+COLOR_CODE           ZCP_DE_COLOR_CODE     Color Code hasil
+IMPORTED_BY          ZCP_DE_USER_ID        USER_ID, bukan SY-UNAME
+IMPORTED_AT          TIMESTAMP             Waktu ditulis
+
+Tidak ada secondary index. Primary key sudah menjadi kunci pencarian.
+
+Catatan: peran tunggal tabel ini adalah mengunci SO item yang sudah pernah
+menjadi DCP. Hanya berisi item yang approved. Item yang ditolak sengaja
+tidak ditulis ke sini supaya bisa diajukan ulang.
+
+Catatan: lock object EZCP_SO memakai tabel ini sebagai primary table, dengan
+parameter kunci SO_NUMBER saja.

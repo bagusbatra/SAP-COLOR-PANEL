@@ -1,0 +1,10 @@
+LOCK OBJECT EZCP_SO
+  Primary Table: ZCP_SO_IMPORT
+  Lock Mode: E (exclusive, cumulative)
+  Lock Parameter: SO_NUMBER
+  (SO_ITEM tidak dijadikan parameter - kunci diambil di level nomor SO
+   supaya approve beberapa item dalam satu SO berjalan sebagai satu unit)
+
+  Function Modules yang ter-generate:
+    ENQUEUE_EZCP_SO
+    DEQUEUE_EZCP_SO
