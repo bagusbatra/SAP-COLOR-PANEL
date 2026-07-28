@@ -1,0 +1,38 @@
+color panel itu entitasnya utamanya ada 5
+
+1.Color Code = Entitas warna
+2.Request-DCP= Sales Representative memiliki pemberitahuan dan melakukan request DCP
+3.DCP (Development Color Panel) = Siklus development warna
+4.MCP (Master Color Panel) = Siklus master panel warna
+5.SP (Station Panel) = Siklus copy panel
+
+Penjelasan dan rules:
+1.Color code itu adalah entitas kode warna saja, rujukan utama dari panel" yang ada dan beredar, jadi entitas ini tidak memiliki panel fisik melainkan hanya menyimpan informasi.
+2.Request juga sama dengan color code , itu hanya entitas yang menangkap request dari buyer untuk dibuatkan DCP (Pra-DCP)
+3.DCP, MCP, dan SP itu adalah entitas yang memiliki bentuk fisik sebuah panel warna yang memiliki siklus hidup.
+4.DCP berfokus pada siklus development warnanya
+5.MCP berfokus pada store warna saja, memiliki fitur peminjaman juga tetapi tidak memiliki konsep hitung mundur setelah dipinjam (hanya expired utama bukan masa pakai)
+6.SP (Istilah baru dari Copy Panel) berfokus pada siklus hidup panel" yang menjadi acuan produksi dalam berkerja, isinya meliputi masa aktif, masa pakai , dan peminajaman.
+7.Untuk material master di sap nya, color ini memiliki BOM (Bill of Materials) bahkan ketika sebelum proses DCP dibuat karena pembuatan panel-panel perlu di kerjakan di produksi dan perlu permintaan bahan secara administratis, untuk pertanyaan apakah material ada sebelum DCP atau setelah DCP, jawabannya adalah sebelum DCP, karena pembuatan panel DCP itu perlu kode SO yang juga sebagai acuan proses produksi membuat panel. Kita tidak masuk ke ranah produksi, tetapi kita bisa memanfaatkan SO ini untuk mendapatkan banyak informasi terkait panel warnanya.
+8.Material Fert 1:1 dengan kode warna, Jika Fert color panel belum memiliki entitas color code berarti statusnya membuat color baru, tetapi kalau sudah ada color codenya di mater color berarti statusnya renewal, ada halaman khusus untuk input SO untuk renewal.
+9.Setiap ada penambahan QTY color dari SO harus dicatat, mencegah duplikat qty, jadi 1 SO hanya berlaku 1 kali transaksi per materialnya, jadi kita perlu entitas tabel lagi untuk mencatat transaksi import Color Panel dari SO.
+10. DCP/MCP itu tahap yang berbeda dengan SO
+
+Jadi urutannya adalah:
+
+A. TAHAP DCP
+1.Sales mengisi form pembuatan DCP, referensinya adalah kode SO color panel, didalam SO tersebut otomatis muncul beberapa material color beserta quantitynya 
+2.Admin Color approve, lalu material yang ada di dalam SO tersebut menjadi DCP serta color code baru. Disini harus dibuat pengecekan material, jadi didalam SO harusnya berisi kode material color yang belum terdaftar sama sekali di color code.
+3.Jumlah DCP tersebut masuk sesuai qty material di SO nya tetapi statusnya default non aktif, Karena itu adalah panel polos belum di cat, yang melakukan pengecatan adalah tim dari station color, jadi admin diberikan kebebasan mengaktifkan item-item panelnya sampai barangnya ready digunakan. 
+3.Ketika hendak mengaktifkan panel DCP admin bebas mengisi tanggal dibuatnya (bukan default hari ini)
+4.DCP kita sepakati dengan user akan di SO kan 15 pcs, penggunaannya terserah dari pihak color room.
+5.Didalam 1 jenis material color, akan ada entitas color panel per pcs nya, itu dikontrol satu persatu. Dari 15 panel tersebut bisa diaktifkan menjadi DCP dan bisa menjadi MCP, atau bahkan bisa juga tidak digunakan sama sekali.
+6.Untuk menandai panel yang sudah di approve oleh buyer, per panelnya bisa disubmit satu persatu, dan perlu upload foto fisik DCP nya yang sudah tertanda tangan lengkap (disimpan ke DMS dengan type dms ZDCP).
+7.Admin color bisa close siklus Request DCP jika setidaknya 1 panel sudah di approve, dan juga bisa mereject siklus DCP nya jika buyer tidak jadi beli tetapi dengan alasan.
+
+B. TAHAP MCP
+1. Panel DCP bisa diteruskan menjadi MCP, tetapi masa aktifnya masih meneruskan ketika start di DCP, jadi slot panel 15 tetap terbuka di MCP, user/admin diberi kebebasan apakah menggunakan DCP untuk MCP atau membuat baru di slot panel yang masih polos. 
+2. Approvenya juga disubmit satu persatu per panelnya, minimal 3 panel di approve untuk close siklus ini (disimpan ke DMS dengan type dms ZMCP).
+3. Ketika silus MCP sudah close maka sisa panel statusnya obsolete, tidak digunakan lagi, tersisa MCP yang release saja yang masih hidup.
+
+Hanya MCP yang memiliki entitas panel yang hidup, jika expired maka di perbarui di halaman renewal MCP (Halaman khusus untuk renewal MCP)  

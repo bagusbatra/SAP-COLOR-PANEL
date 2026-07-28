@@ -1,0 +1,302 @@
+*&---------------------------------------------------------------------*
+*& Report ZCREATE_CP_DATA_ELEMENTS
+*& Create all Data Elements for Color Panel Z-tables
+*& WAJIB dijalankan SEBELUM ZCREATE_COLOR_PANEL_TABLES
+*& Run in SE38 → Execute
+*&---------------------------------------------------------------------*
+*& Creates 40+ custom Data Elements (ZCP_*)
+*&---------------------------------------------------------------------*
+REPORT zcreate_cp_data_elements.
+
+PARAMETERS: p_test AS CHECKBOX DEFAULT 'X'.  " Test mode
+PARAMETERS: p_act  AS CHECKBOX.              " Activate after create
+
+TYPES: BEGIN OF ty_result,
+         rollname TYPE dd04l-rollname,
+         status   TYPE char20,
+         message  TYPE char100,
+       END OF ty_result,
+       tt_result TYPE STANDARD TABLE OF ty_result WITH DEFAULT KEY.
+
+DATA: gt_result TYPE tt_result.
+
+START-OF-SELECTION.
+
+* String types
+  PERFORM create_de USING 'ZCP_JSON'     'STRG' '' 'JSON Snapshot Data'.
+  PERFORM create_de USING 'ZCP_QR_DATA'  'STRG' '' 'Base64 PNG QR Code Data'.
+
+* Custom types (need domain first)
+  PERFORM create_domain USING 'ZCP_D_C20'  'CHAR'  20  'Color Panel CHAR 20'.
+  PERFORM create_domain USING 'ZCP_D_C50'  'CHAR'  50  'Color Panel CHAR 50'.
+  PERFORM create_domain USING 'ZCP_D_C64'  'CHAR'  64  'Color Panel CHAR 64 (Hash/Token)'.
+  PERFORM create_domain USING 'ZCP_D_C80'  'CHAR'  80  'Color Panel CHAR 80'.
+  PERFORM create_domain USING 'ZCP_D_C16'  'CHAR'  16  'Color Panel CHAR 16'.
+  PERFORM create_domain USING 'ZCP_D_C30'  'CHAR'  30  'Color Panel CHAR 30'.
+  PERFORM create_domain USING 'ZCP_D_C01'  'CHAR'   1  'Color Panel Flag Y/N'.
+  PERFORM create_domain USING 'ZCP_D_C10'  'CHAR'  10  'Color Panel CHAR 10'.
+  PERFORM create_domain USING 'ZCP_D_C12'  'CHAR'  12  'Color Panel Status 12'.
+  PERFORM create_domain USING 'ZCP_D_C15'  'CHAR'  15  'Color Panel CHAR 15'.
+  PERFORM create_domain USING 'ZCP_D_C40'  'CHAR'  40  'Color Panel CHAR 40'.
+  PERFORM create_domain USING 'ZCP_D_C60'  'CHAR'  60  'Color Panel CHAR 60'.
+  PERFORM create_domain USING 'ZCP_D_C100' 'CHAR' 100  'Color Panel CHAR 100'.
+  PERFORM create_domain USING 'ZCP_D_C255' 'CHAR' 255  'Color Panel CHAR 255'.
+  PERFORM create_domain USING 'ZCP_D_N08'  'NUMC'   8  'Color Panel Number 8'.
+  PERFORM create_domain USING 'ZCP_D_N02'  'NUMC'   2  'Color Panel Number 2'.
+  PERFORM create_domain USING 'ZCP_D_N04'  'NUMC'   4  'Color Panel Number 4'.
+  PERFORM create_domain USING 'ZCP_D_N12'  'NUMC'  12  'Color Panel Number 12'.
+  PERFORM create_domain USING 'ZCP_D_INT4' 'INT4'   0  'Color Panel Integer'.
+  PERFORM create_domain USING 'ZCP_D_DATS' 'DATS'   0  'Color Panel Date'.
+  PERFORM create_domain USING 'ZCP_D_TIMS' 'TIMS'   0  'Color Panel Time'.
+  PERFORM create_domain USING 'ZCP_D_TSTP' 'DEC'   15  'Color Panel Timestamp'.
+
+* Data Elements
+  PERFORM create_de USING 'ZCP_USER_ID'    'ZCP_D_C20'  '' 'User ID'.
+  PERFORM create_de USING 'ZCP_FULLNAME'   'ZCP_D_C50'  '' 'Nama Lengkap'.
+  PERFORM create_de USING 'ZCP_PWD_HASH'   'ZCP_D_C64'  '' 'SHA256 Password Hash'.
+  PERFORM create_de USING 'ZCP_EMAIL'      'ZCP_D_C80'  '' 'Email Address'.
+  PERFORM create_de USING 'ZCP_NIK'        'ZCP_D_C16'  '' 'Nomor Induk Karyawan'.
+  PERFORM create_de USING 'ZCP_ROLE'       'ZCP_D_C30'  '' 'User Role'.
+  PERFORM create_de USING 'ZCP_ACTIVE'     'ZCP_D_C01'  '' 'Active Flag (Y/N)'.
+  PERFORM create_de USING 'ZCP_BOOL'       'ZCP_D_C01'  '' 'Boolean Flag (Y/N)'.
+  PERFORM create_de USING 'ZCP_DATUM'      'ZCP_D_DATS' '' 'Date'.
+  PERFORM create_de USING 'ZCP_UZEIT'      'ZCP_D_TIMS' '' 'Time'.
+  PERFORM create_de USING 'ZCP_TIMESTAMP'  'ZCP_D_TSTP' '' 'Timestamp'.
+  PERFORM create_de USING 'ZCP_BUYER_ID'   'ZCP_D_N08'  '' 'Buyer ID'.
+  PERFORM create_de USING 'ZCP_KODE'       'ZCP_D_C20'  '' 'Code'.
+  PERFORM create_de USING 'ZCP_NAME'       'ZCP_D_C100' '' 'Name/Description'.
+  PERFORM create_de USING 'ZCP_WC_ID'      'ZCP_D_N08'  '' 'Work Center ID'.
+  PERFORM create_de USING 'ZCP_WC_CODE'    'ZCP_D_C20'  '' 'Work Center Code'.
+  PERFORM create_de USING 'ZCP_DESC'       'ZCP_D_C100' '' 'Description'.
+  PERFORM create_de USING 'ZCP_CATEGORY'   'ZCP_D_C20'  '' 'Category'.
+  PERFORM create_de USING 'ZCP_NO_PO'      'ZCP_D_C60'  '' 'PO Number (Full)'.
+  PERFORM create_de USING 'ZCP_PO_NUM'     'ZCP_D_C20'  '' 'PO Number (Numeric)'.
+  PERFORM create_de USING 'ZCP_MONTH'      'ZCP_D_N02'  '' 'Month (01-12)'.
+  PERFORM create_de USING 'ZCP_YEAR'       'ZCP_D_N04'  '' 'Year (4 Digit)'.
+  PERFORM create_de USING 'ZCP_NOTES'      'ZCP_D_C255' '' 'Notes'.
+  PERFORM create_de USING 'ZCP_DCP_STAT'   'ZCP_D_C12'  '' 'DCP Status'.
+  PERFORM create_de USING 'ZCP_DCP_ID'     'ZCP_D_N08'  '' 'DCP ID'.
+  PERFORM create_de USING 'ZCP_ITEM_ID'    'ZCP_D_N08'  '' 'DCP Item ID'.
+  PERFORM create_de USING 'ZCP_MATNR'      'ZCP_D_C40'  '' 'Material Code'.
+  PERFORM create_de USING 'ZCP_FINISH'     'ZCP_D_C100' '' 'Finish Code'.
+  PERFORM create_de USING 'ZCP_COLOR'      'ZCP_D_C10'  '' 'Color Code (KW00001)'.
+  PERFORM create_de USING 'ZCP_QTY'        'ZCP_D_INT4' '' 'Quantity'.
+  PERFORM create_de USING 'ZCP_TOKEN'      'ZCP_D_C64'  '' 'QR Token (128-bit hex)'.
+  PERFORM create_de USING 'ZCP_SEQ'        'ZCP_D_INT4' '' 'Sequence Order'.
+  PERFORM create_de USING 'ZCP_MCP_ID'     'ZCP_D_N08'  '' 'MCP ID'.
+  PERFORM create_de USING 'ZCP_PANEL_CD'   'ZCP_D_C20'  '' 'Panel Code (MCP-xxx-Rx)'.
+  PERFORM create_de USING 'ZCP_PANEL_TY'   'ZCP_D_C15'  '' 'Panel Type'.
+  PERFORM create_de USING 'ZCP_LEMARI'     'ZCP_D_C01'  '' 'Lemari (A-Y)'.
+  PERFORM create_de USING 'ZCP_RACK'       'ZCP_D_C01'  '' 'Rack Number (01-32)'.
+  PERFORM create_de USING 'ZCP_REVISION'   'ZCP_D_INT4' '' 'Revision Number'.
+  PERFORM create_de USING 'ZCP_CHKOUT'     'ZCP_D_C01'  '' 'Checkout Status (IN/OUT)'.
+  PERFORM create_de USING 'ZCP_CP_ID'      'ZCP_D_N08'  '' 'Copy Panel ID'.
+  PERFORM create_de USING 'ZCP_COMP_TP'    'ZCP_D_C15'  '' 'Component Type'.
+  PERFORM create_de USING 'ZCP_CP_STAT'    'ZCP_D_C12'  '' 'CP Status'.
+  PERFORM create_de USING 'ZCP_BORROW_ID'  'ZCP_D_N08'  '' 'Borrow Transaction ID'.
+  PERFORM create_de USING 'ZCP_TRX_NUM'    'ZCP_D_C20'  '' 'Transaction Number (TRX/xx/xxxx)'.
+  PERFORM create_de USING 'ZCP_TRX_STAT'   'ZCP_D_C10'  '' 'Transaction Status'.
+  PERFORM create_de USING 'ZCP_ROT_ID'     'ZCP_D_N08'  '' 'Rotation ID'.
+  PERFORM create_de USING 'ZCP_BORR_ITM'   'ZCP_D_N08'  '' 'Borrow Item ID'.
+  PERFORM create_de USING 'ZCP_BORR_STAT'  'ZCP_D_C10'  '' 'Borrow Item Status'.
+  PERFORM create_de USING 'ZCP_ARCHIVE_ID' 'ZCP_D_N08'  '' 'Archive ID'.
+  PERFORM create_de USING 'ZCP_COUNT'      'ZCP_D_INT4' '' 'Count'.
+  PERFORM create_de USING 'ZCP_LOG_ID'     'ZCP_D_N12'  '' 'Audit Log ID'.
+  PERFORM create_de USING 'ZCP_ACTION'     'ZCP_D_C30'  '' 'Action Type'.
+  PERFORM create_de USING 'ZCP_DETAILS'    'ZCP_D_C255' '' 'Details'.
+  PERFORM create_de USING 'ZCP_IP_ADDR'    'ZCP_D_C15'  '' 'IP Address'.
+
+  IF p_act = 'X'.
+    PERFORM activate_all.
+  ENDIF.
+
+  PERFORM display_results.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_DOMAIN
+*&---------------------------------------------------------------------*
+FORM create_domain USING p_domname TYPE clike
+                         p_dtype TYPE clike
+                         p_length TYPE i
+                         p_ddtext TYPE clike.
+
+  DATA: ls_dd01v TYPE dd01v,
+        ls_result TYPE ty_result.
+
+  ls_result-rollname = p_domname.
+
+  " Check exists
+  DATA: ls_check TYPE dd01v.
+  CALL FUNCTION 'DDIF_DOMA_GET'
+    EXPORTING
+      name     = p_domname
+      state    = 'A'
+    IMPORTING
+      dd01v_wa = ls_check
+    EXCEPTIONS OTHERS = 1.
+
+  IF sy-subrc = 0 AND ls_check-domname IS NOT INITIAL.
+    ls_result-status  = 'EXISTS'.
+    ls_result-message = 'Domain exists'.
+    APPEND ls_result TO gt_result.
+    RETURN.
+  ENDIF.
+
+  IF p_test = 'X'.
+    ls_result-status  = 'WOULD CREATE'.
+    ls_result-message = 'Test mode'.
+    APPEND ls_result TO gt_result.
+    RETURN.
+  ENDIF.
+
+  CLEAR ls_dd01v.
+  ls_dd01v-domname    = p_domname.
+  ls_dd01v-ddlanguage = sy-langu.
+  ls_dd01v-datatype   = p_dtype.
+  ls_dd01v-leng       = p_length.
+  ls_dd01v-ddtext     = p_ddtext.
+
+  CALL FUNCTION 'DDIF_DOMA_PUT'
+    EXPORTING
+      name      = p_domname
+      dd01v_wa  = ls_dd01v
+    EXCEPTIONS OTHERS = 1.
+
+  IF sy-subrc = 0.
+    ls_result-status  = 'CREATED'.
+    ls_result-message = 'Domain created'.
+  ELSE.
+    ls_result-status  = 'ERROR'.
+    ls_result-message = 'Domain creation failed'.
+  ENDIF.
+
+  APPEND ls_result TO gt_result.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_DE
+*&---------------------------------------------------------------------*
+FORM create_de USING p_rollname TYPE clike
+                     p_domname TYPE clike
+                     p_datatype TYPE clike
+                     p_ddtext TYPE clike.
+
+  DATA: ls_dd04v TYPE dd04v,
+        ls_result TYPE ty_result.
+
+  ls_result-rollname = p_rollname.
+
+  " Check exists
+  DATA: ls_check TYPE dd04v.
+  CALL FUNCTION 'DDIF_DTEL_GET'
+    EXPORTING
+      name     = p_rollname
+      state    = 'A'
+    IMPORTING
+      dd04v_wa = ls_check
+    EXCEPTIONS OTHERS = 1.
+
+  IF sy-subrc = 0 AND ls_check-rollname IS NOT INITIAL.
+    ls_result-status  = 'EXISTS'.
+    ls_result-message = 'Data Element exists'.
+    APPEND ls_result TO gt_result.
+    RETURN.
+  ENDIF.
+
+  IF p_test = 'X'.
+    ls_result-status  = 'WOULD CREATE'.
+    ls_result-message = 'Test mode'.
+    APPEND ls_result TO gt_result.
+    RETURN.
+  ENDIF.
+
+  CLEAR ls_dd04v.
+  ls_dd04v-rollname    = p_rollname.
+  ls_dd04v-ddlanguage  = sy-langu.
+  ls_dd04v-domname     = p_domname.
+  ls_dd04v-ddtext      = p_ddtext.
+  ls_dd04v-scrtext_s   = p_ddtext(10).
+  ls_dd04v-scrtext_m   = p_ddtext(20).
+  ls_dd04v-scrtext_l   = p_ddtext(40).
+
+  CALL FUNCTION 'DDIF_DTEL_PUT'
+    EXPORTING
+      name      = p_rollname
+      dd04v_wa  = ls_dd04v
+    EXCEPTIONS OTHERS = 1.
+
+  IF sy-subrc = 0.
+    ls_result-status  = 'CREATED'.
+    ls_result-message = 'Data Element created'.
+  ELSE.
+    ls_result-status  = 'ERROR'.
+    ls_result-message = 'DE creation failed'.
+  ENDIF.
+
+  APPEND ls_result TO gt_result.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form ACTIVATE_ALL
+*&---------------------------------------------------------------------*
+FORM activate_all.
+
+  DATA: ls_r TYPE ty_result.
+
+  " Activate domains first
+  LOOP AT gt_result INTO ls_r WHERE status = 'CREATED'
+    AND rollname CP 'ZCP_D_*'.
+    CALL FUNCTION 'DDIF_DOMA_ACTIVATE'
+      EXPORTING name = ls_r-rollname
+      EXCEPTIONS OTHERS = 1.
+    IF sy-subrc = 0.
+      ls_r-status = 'ACTIVATED'.
+      MODIFY gt_result FROM ls_r.
+    ENDIF.
+  ENDLOOP.
+
+  " Then activate data elements
+  LOOP AT gt_result INTO ls_r WHERE status = 'CREATED'.
+    CALL FUNCTION 'DDIF_DTEL_ACTIVATE'
+      EXPORTING name = ls_r-rollname
+      EXCEPTIONS OTHERS = 1.
+    IF sy-subrc = 0.
+      ls_r-status = 'ACTIVATED'.
+      MODIFY gt_result FROM ls_r.
+    ENDIF.
+  ENDLOOP.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_RESULTS
+*&---------------------------------------------------------------------*
+FORM display_results.
+
+  WRITE: / '========================================================'.
+  WRITE: / 'Color Panel Data Elements Creation Report'.
+  WRITE: / 'Date:', sy-datum, 'Time:', sy-uzeit.
+  WRITE: / 'Mode:', COND char20( WHEN p_test = 'X' THEN 'TEST' ELSE 'CREATE' ).
+  WRITE: / '========================================================'.
+  WRITE: /.
+
+  DATA: lv_domain_count TYPE i VALUE 0,
+        lv_de_count TYPE i VALUE 0.
+
+  LOOP AT gt_result INTO DATA(ls_r).
+    WRITE: / ls_r-rollname(20), '|', ls_r-status(15), '|', ls_r-message.
+    IF ls_r-rollname CP 'ZCP_D_*'.
+      lv_domain_count = lv_domain_count + 1.
+    ELSE.
+      lv_de_count = lv_de_count + 1.
+    ENDIF.
+  ENDLOOP.
+
+  WRITE: /.
+  WRITE: / 'Domains:', lv_domain_count, '| Data Elements:', lv_de_count.
+  WRITE: /.
+  WRITE: / 'NEXT: Run ZCREATE_COLOR_PANEL_TABLES to create tables.'.
+
+ENDFORM.

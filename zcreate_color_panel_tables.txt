@@ -1,0 +1,568 @@
+*&---------------------------------------------------------------------*
+*& Report ZCREATE_COLOR_PANEL_TABLES
+*& Create all Z-tables for Color Panel Management System
+*& Run in SE38 → Execute → Tables created in DDIC
+*& After run: activate all tables via SE11 or mass activate
+*&---------------------------------------------------------------------*
+*& WARNING: Run in $TMP (local) first. Transport later.
+*& Tables: ZCP_USER, ZCP_BUYER, ZCP_WC, ZCP_DCP_HDR, ZCP_DCP_ITEM,
+*&         ZCP_MCP, ZCP_CP, ZCP_BORROW, ZCP_BORROW_ITM,
+*&         ZCP_BORROW_ARC, ZCP_AUDIT_LOG
+*&---------------------------------------------------------------------*
+REPORT zcreate_color_panel_tables.
+
+*----------------------------------------------------------------------*
+* Selection screen
+*----------------------------------------------------------------------*
+PARAMETERS: p_test AS CHECKBOX DEFAULT 'X'.  " Test mode (display only)
+PARAMETERS: p_act  AS CHECKBOX.              " Activate after create
+
+*----------------------------------------------------------------------*
+* Types
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_result,
+         tabname   TYPE dd02l-tabname,
+         status    TYPE char20,
+         message   TYPE char100,
+       END OF ty_result,
+       tt_result TYPE STANDARD TABLE OF ty_result WITH DEFAULT KEY.
+
+*----------------------------------------------------------------------*
+* Global data
+*----------------------------------------------------------------------*
+DATA: gt_result TYPE tt_result,
+      gv_dd02v  TYPE dd02v,
+      gv_dd03p  TYPE TABLE OF dd03p WITH HEADER LINE,
+      gv_subrc  TYPE sy-subrc.
+
+*----------------------------------------------------------------------*
+* Main
+*----------------------------------------------------------------------*
+START-OF-SELECTION.
+
+  PERFORM create_table_zcp_user.
+  PERFORM create_table_zcp_buyer.
+  PERFORM create_table_zcp_wc.
+  PERFORM create_table_zcp_dcp_hdr.
+  PERFORM create_table_zcp_dcp_item.
+  PERFORM create_table_zcp_mcp.
+  PERFORM create_table_zcp_cp.
+  PERFORM create_table_zcp_borrow.
+  PERFORM create_table_zcp_borrow_itm.
+  PERFORM create_table_zcp_borrow_arc.
+  PERFORM create_table_zcp_audit_log.
+
+* Activate if requested
+  IF p_act = 'X'.
+    PERFORM activate_all_tables.
+  ENDIF.
+
+* Display results
+  PERFORM display_results.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_TABLE_ZCP_USER
+*&---------------------------------------------------------------------*
+FORM create_table_zcp_user.
+
+  CLEAR: gv_dd02v, gv_dd03p.
+  REFRESH gv_dd03p.
+
+  gv_dd02v-tabname    = 'ZCP_USER'.
+  gv_dd02v-ddlanguage = sy-langu.
+  gv_dd02v-tabclass   = 'APPL'.
+  gv_dd02v-contflag   = 'A'.
+  gv_dd02v-exclass    = '1'.
+  gv_dd02v-ddtext     = 'Color Panel - User & Role Management'.
+
+  " Fields
+  PERFORM add_field USING 'MANDT'     'MANDT'     'X' '' 'Client'.
+  PERFORM add_field USING 'USER_ID'   'ZCP_USER_ID' 'X' '' 'User ID (Login)'.
+  PERFORM add_field USING 'FULL_NAME' 'ZCP_FULLNAME' '' '' 'Nama Lengkap'.
+  PERFORM add_field USING 'PASSWORD'  'ZCP_PWD_HASH' '' '' 'SHA256 Password Hash'.
+  PERFORM add_field USING 'EMAIL'     'ZCP_EMAIL'  '' '' 'Email'.
+  PERFORM add_field USING 'NIK'       'ZCP_NIK'    '' '' 'Nomor Induk Karyawan'.
+  PERFORM add_field USING 'ROLE'      'ZCP_ROLE'   '' '' 'Role: IT/BORROWER/QC/ADMIN/APPROVAL'.
+  PERFORM add_field USING 'WC_ID'     'ZCP_WC_ID'  '' '' 'Work Center (untuk BORROWER)'.
+  PERFORM add_field USING 'STATUS'    'ZCP_ACTIVE' '' '' 'Y=Active, N=Nonactive'.
+  PERFORM add_field USING 'LAST_LOGIN' 'ZCP_DATUM' '' '' 'Tanggal Login Terakhir'.
+  PERFORM add_field USING 'CREATED_DATE' 'ZCP_DATUM' '' '' 'Tanggal Dibuat'.
+  PERFORM add_field USING 'CREATED_BY' 'ZCP_USER_ID' '' '' 'Dibuat Oleh'.
+
+  PERFORM put_table USING 'ZCP_USER' gv_dd02v gv_dd03p[].
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_TABLE_ZCP_BUYER
+*&---------------------------------------------------------------------*
+FORM create_table_zcp_buyer.
+
+  CLEAR: gv_dd02v, gv_dd03p.
+  REFRESH gv_dd03p.
+
+  gv_dd02v-tabname    = 'ZCP_BUYER'.
+  gv_dd02v-ddlanguage = sy-langu.
+  gv_dd02v-tabclass   = 'APPL'.
+  gv_dd02v-contflag   = 'A'.
+  gv_dd02v-exclass    = '1'.
+  gv_dd02v-ddtext     = 'Color Panel - Master Buyer'.
+
+  PERFORM add_field USING 'MANDT'      'MANDT'      'X' '' 'Client'.
+  PERFORM add_field USING 'BUYER_ID'   'ZCP_BUYER_ID' 'X' '' 'Buyer ID (Auto)'.
+  PERFORM add_field USING 'KODE_BUYER' 'ZCP_KODE'   '' '' 'Kode Buyer (Unik)'.
+  PERFORM add_field USING 'NAMA_BUYER' 'ZCP_NAME'   '' '' 'Nama Buyer'.
+  PERFORM add_field USING 'CREATED_DATE' 'ZCP_DATUM' '' '' 'Tanggal Dibuat'.
+
+  PERFORM put_table USING 'ZCP_BUYER' gv_dd02v gv_dd03p[].
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_TABLE_ZCP_WC
+*&---------------------------------------------------------------------*
+FORM create_table_zcp_wc.
+
+  CLEAR: gv_dd02v, gv_dd03p.
+  REFRESH gv_dd03p.
+
+  gv_dd02v-tabname    = 'ZCP_WC'.
+  gv_dd02v-ddlanguage = sy-langu.
+  gv_dd02v-tabclass   = 'APPL'.
+  gv_dd02v-contflag   = 'A'.
+  gv_dd02v-exclass    = '1'.
+  gv_dd02v-ddtext     = 'Color Panel - Master Work Center'.
+
+  PERFORM add_field USING 'MANDT'      'MANDT'       'X' '' 'Client'.
+  PERFORM add_field USING 'WC_ID'      'ZCP_WC_ID'   'X' '' 'Work Center ID'.
+  PERFORM add_field USING 'WC_CODE'    'ZCP_WC_CODE' '' '' 'Kode Work Center'.
+  PERFORM add_field USING 'WC_DESC'    'ZCP_DESC'    '' '' 'Deskripsi WC'.
+  PERFORM add_field USING 'CATEGORY'   'ZCP_CATEGORY' '' '' 'PAINTING/QC_PACKING/QC_INSPECT'.
+  PERFORM add_field USING 'PARENT_WC'  'ZCP_WC_ID'   '' '' 'Parent WC (Hierarchy)'.
+  PERFORM add_field USING 'IS_ACTIVE'  'ZCP_ACTIVE'  '' '' 'Y=Active, N=Nonactive'.
+  PERFORM add_field USING 'CREATED_DATE' 'ZCP_DATUM'  '' '' 'Tanggal Dibuat'.
+
+  PERFORM put_table USING 'ZCP_WC' gv_dd02v gv_dd03p[].
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_TABLE_ZCP_DCP_HDR
+*&---------------------------------------------------------------------*
+FORM create_table_zcp_dcp_hdr.
+
+  CLEAR: gv_dd02v, gv_dd03p.
+  REFRESH gv_dd03p.
+
+  gv_dd02v-tabname    = 'ZCP_DCP_HDR'.
+  gv_dd02v-ddlanguage = sy-langu.
+  gv_dd02v-tabclass   = 'APPL'.
+  gv_dd02v-contflag   = 'A'.
+  gv_dd02v-exclass    = '1'.
+  gv_dd02v-ddtext     = 'Color Panel - DCP Header (Development Color Panel)'.
+
+  PERFORM add_field USING 'MANDT'        'MANDT'        'X' '' 'Client'.
+  PERFORM add_field USING 'DCP_ID'       'ZCP_DCP_ID'   'X' '' 'DCP ID (Auto Number)'.
+  PERFORM add_field USING 'NO_PO'        'ZCP_NO_PO'    '' '' 'No PO: {no}/KMI/{romawi}/{thn}'.
+  PERFORM add_field USING 'PO_NUMBER'    'ZCP_PO_NUM'   '' '' 'Angka PO (Input Manual)'.
+  PERFORM add_field USING 'PO_MONTH'     'ZCP_MONTH'    '' '' 'Bulan PO 1-12'.
+  PERFORM add_field USING 'PO_YEAR'      'ZCP_YEAR'     '' '' 'Tahun PO 4 Digit'.
+  PERFORM add_field USING 'BUYER_ID'     'ZCP_BUYER_ID' '' '' 'FK ZCP_BUYER'.
+  PERFORM add_field USING 'CUSTOMER_NAME' 'ZCP_NAME'    '' '' 'Snapshot Nama Customer'.
+  PERFORM add_field USING 'NOTES'        'ZCP_NOTES'    '' '' 'Catatan'.
+  PERFORM add_field USING 'IS_MANUAL'    'ZCP_BOOL'     '' '' 'Y=Hard-Create (Tanpa Approval)'.
+  PERFORM add_field USING 'STATUS'       'ZCP_DCP_STAT' '' '' 'DRAFT/IN_PROGRESS/REVIEW/APPROVED/REJECTED'.
+  PERFORM add_field USING 'CREATED_BY'   'ZCP_USER_ID'  '' '' 'Dibuat Oleh'.
+  PERFORM add_field USING 'CREATED_DATE' 'ZCP_DATUM'    '' '' 'Tanggal Dibuat'.
+  PERFORM add_field USING 'CREATED_TIME' 'ZCP_UZEIT'    '' '' 'Jam Dibuat'.
+
+  PERFORM put_table USING 'ZCP_DCP_HDR' gv_dd02v gv_dd03p[].
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_TABLE_ZCP_DCP_ITEM
+*&---------------------------------------------------------------------*
+FORM create_table_zcp_dcp_item.
+
+  CLEAR: gv_dd02v, gv_dd03p.
+  REFRESH gv_dd03p.
+
+  gv_dd02v-tabname    = 'ZCP_DCP_ITEM'.
+  gv_dd02v-ddlanguage = sy-langu.
+  gv_dd02v-tabclass   = 'APPL'.
+  gv_dd02v-contflag   = 'A'.
+  gv_dd02v-exclass    = '1'.
+  gv_dd02v-ddtext     = 'Color Panel - DCP Item (Material & Finish Code)'.
+
+  PERFORM add_field USING 'MANDT'        'MANDT'        'X' '' 'Client'.
+  PERFORM add_field USING 'ITEM_ID'      'ZCP_ITEM_ID'  'X' '' 'Item ID (Auto Number)'.
+  PERFORM add_field USING 'DCP_ID'       'ZCP_DCP_ID'   '' '' 'FK ZCP_DCP_HDR'.
+  PERFORM add_field USING 'KODE_MATERIAL' 'ZCP_MATNR'   '' '' 'Kode Material'.
+  PERFORM add_field USING 'FINISH_CODE'  'ZCP_FINISH'   '' '' 'Finish Code'.
+  PERFORM add_field USING 'SOLID'        'ZCP_FINISH'   '' '' 'Finish Code Solid'.
+  PERFORM add_field USING 'VENEER'       'ZCP_FINISH'   '' '' 'Finish Code Veneer'.
+  PERFORM add_field USING 'COLOR_CODE'   'ZCP_COLOR'    '' '' 'Auto: KW + 5 Digit'.
+  PERFORM add_field USING 'QTY'          'ZCP_QTY'      '' '' 'Jumlah Lembar Kartu'.
+  PERFORM add_field USING 'QR_TOKEN'     'ZCP_TOKEN'    '' '' 'Token Unik QR (128-bit hex)'.
+  PERFORM add_field USING 'QR_DATA'      'ZCP_QR_DATA'  '' '' 'Base64 PNG QR Code'.
+  PERFORM add_field USING 'IS_LOCKED'    'ZCP_BOOL'     '' '' 'Y=Locked (Sudah Diturunkan MCP)'.
+  PERFORM add_field USING 'SEQ_ORDER'    'ZCP_SEQ'      '' '' 'Urutan Item'.
+  PERFORM add_field USING 'CREATED_DATE' 'ZCP_DATUM'    '' '' 'Tanggal Dibuat'.
+
+  PERFORM put_table USING 'ZCP_DCP_ITEM' gv_dd02v gv_dd03p[].
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_TABLE_ZCP_MCP
+*&---------------------------------------------------------------------*
+FORM create_table_zcp_mcp.
+
+  CLEAR: gv_dd02v, gv_dd03p.
+  REFRESH gv_dd03p.
+
+  gv_dd02v-tabname    = 'ZCP_MCP'.
+  gv_dd02v-ddlanguage = sy-langu.
+  gv_dd02v-tabclass   = 'APPL'.
+  gv_dd02v-contflag   = 'A'.
+  gv_dd02v-exclass    = '1'.
+  gv_dd02v-ddtext     = 'Color Panel - Master Color Panel (MCP)'.
+
+  PERFORM add_field USING 'MANDT'         'MANDT'         'X' '' 'Client'.
+  PERFORM add_field USING 'MCP_ID'        'ZCP_MCP_ID'    'X' '' 'MCP ID (Auto Number)'.
+  PERFORM add_field USING 'PANEL_CODE'    'ZCP_PANEL_CD'  '' '' 'MCP-{itemId}-R{rev}'.
+  PERFORM add_field USING 'DCP_ITEM_ID'   'ZCP_ITEM_ID'   '' '' 'FK ZCP_DCP_ITEM'.
+  PERFORM add_field USING 'BUYER_ID'      'ZCP_BUYER_ID'  '' '' 'FK ZCP_BUYER'.
+  PERFORM add_field USING 'COLOR_NAME'    'ZCP_NAME'      '' '' 'Nama Warna'.
+  PERFORM add_field USING 'PANEL_TYPE'    'ZCP_PANEL_TY'  '' '' 'GOLDEN/PRODUCTION/BUYER_APPROVED'.
+  PERFORM add_field USING 'LEMARI'        'ZCP_LEMARI'    '' '' 'A-Y'.
+  PERFORM add_field USING 'RACK_NUMBER'   'ZCP_RACK'      '' '' '01-32'.
+  PERFORM add_field USING 'MFG_DATE'      'ZCP_DATUM'     '' '' 'Tanggal Produksi'.
+  PERFORM add_field USING 'EXPIRED_DATE'  'ZCP_DATUM'     '' '' 'MFG + 6 Bulan'.
+  PERFORM add_field USING 'IS_ACTIVE'     'ZCP_BOOL'      '' '' 'Y=Active, N=Nonactive'.
+  PERFORM add_field USING 'REVISION_NUM'  'ZCP_REVISION'  '' '' 'Revisi 0,1,2,...'.
+  PERFORM add_field USING 'PARENT_MCP_ID' 'ZCP_MCP_ID'    '' '' 'FK ZCP_MCP (Revisi Sblm)'.
+  PERFORM add_field USING 'QR_TOKEN'      'ZCP_TOKEN'     '' '' 'Token QR Scan QC'.
+  PERFORM add_field USING 'QR_DATA'       'ZCP_QR_DATA'   '' '' 'Base64 PNG QR'.
+  PERFORM add_field USING 'CHECKOUT_STAT' 'ZCP_CHKOUT'    '' '' 'IN/OUT'.
+  PERFORM add_field USING 'CHECKED_OUT_BY' 'ZCP_USER_ID'  '' '' 'QC Yang Checkout'.
+  PERFORM add_field USING 'CHECKED_OUT_AT' 'ZCP_TIMESTAMP' '' '' 'Waktu Checkout'.
+  PERFORM add_field USING 'DEACTIVATED_AT' 'ZCP_TIMESTAMP' '' '' 'Waktu Nonaktif'.
+  PERFORM add_field USING 'DEACTIVATED_BY' 'ZCP_USER_ID'  '' '' 'Siapa Nonaktifkan'.
+  PERFORM add_field USING 'NOTES'         'ZCP_NOTES'     '' '' 'Catatan'.
+  PERFORM add_field USING 'CREATED_DATE'  'ZCP_DATUM'     '' '' 'Tanggal Dibuat'.
+  PERFORM add_field USING 'CREATED_BY'    'ZCP_USER_ID'   '' '' 'Dibuat Oleh'.
+
+  PERFORM put_table USING 'ZCP_MCP' gv_dd02v gv_dd03p[].
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_TABLE_ZCP_CP
+*&---------------------------------------------------------------------*
+FORM create_table_zcp_cp.
+
+  CLEAR: gv_dd02v, gv_dd03p.
+  REFRESH gv_dd03p.
+
+  gv_dd02v-tabname    = 'ZCP_CP'.
+  gv_dd02v-ddlanguage = sy-langu.
+  gv_dd02v-tabclass   = 'APPL'.
+  gv_dd02v-contflag   = 'A'.
+  gv_dd02v-exclass    = '1'.
+  gv_dd02v-ddtext     = 'Color Panel - Copy Panel (Station Panel)'.
+
+  PERFORM add_field USING 'MANDT'         'MANDT'         'X' '' 'Client'.
+  PERFORM add_field USING 'CP_ID'         'ZCP_CP_ID'     'X' '' 'CP ID (Auto Number)'.
+  PERFORM add_field USING 'MCP_ID'        'ZCP_MCP_ID'    '' '' 'FK ZCP_MCP'.
+  PERFORM add_field USING 'COLOR_CODE'    'ZCP_COLOR'     '' '' '{NNN}-{color_name}'.
+  PERFORM add_field USING 'COLOR_NAME'    'ZCP_NAME'      '' '' 'Nama Warna'.
+  PERFORM add_field USING 'BUYER_ID'      'ZCP_BUYER_ID'  '' '' 'FK ZCP_BUYER'.
+  PERFORM add_field USING 'LEMARI'        'ZCP_LEMARI'    '' '' 'A-Y'.
+  PERFORM add_field USING 'RACK_NUMBER'   'ZCP_RACK'      '' '' '01-32'.
+  PERFORM add_field USING 'COMPONENT_TYPE' 'ZCP_COMP_TP'  '' '' 'PANEL_STEP/FINISH_STEP'.
+  PERFORM add_field USING 'MFG_DATE'      'ZCP_DATUM'     '' '' 'Tanggal Produksi'.
+  PERFORM add_field USING 'EXPIRED_DATE'  'ZCP_DATUM'     '' '' 'MFG + 90 Hari'.
+  PERFORM add_field USING 'STATUS'        'ZCP_CP_STAT'   '' '' 'AVAILABLE/BORROWED/UNAVAILABLE/EXPIRED/RENEW/FINISHED/INACTIVE'.
+  PERFORM add_field USING 'QR_TOKEN'      'ZCP_TOKEN'     '' '' 'Token Unik QR'.
+  PERFORM add_field USING 'QR_DATA'       'ZCP_QR_DATA'   '' '' 'Base64 PNG QR'.
+  PERFORM add_field USING 'PDF_DOWNLOADED' 'ZCP_BOOL'     '' '' 'Y=Label Pernah Di-Download'.
+  PERFORM add_field USING 'DEACTIVATED_AT' 'ZCP_TIMESTAMP' '' '' 'Waktu Nonaktif'.
+  PERFORM add_field USING 'DEACTIVATED_BY' 'ZCP_USER_ID'  '' '' 'Siapa Nonaktifkan'.
+  PERFORM add_field USING 'CREATED_DATE'  'ZCP_DATUM'     '' '' 'Tanggal Dibuat'.
+  PERFORM add_field USING 'CREATED_BY'    'ZCP_USER_ID'   '' '' 'Dibuat Oleh'.
+
+  PERFORM put_table USING 'ZCP_CP' gv_dd02v gv_dd03p[].
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_TABLE_ZCP_BORROW
+*&---------------------------------------------------------------------*
+FORM create_table_zcp_borrow.
+
+  CLEAR: gv_dd02v, gv_dd03p.
+  REFRESH gv_dd03p.
+
+  gv_dd02v-tabname    = 'ZCP_BORROW'.
+  gv_dd02v-ddlanguage = sy-langu.
+  gv_dd02v-tabclass   = 'APPL'.
+  gv_dd02v-contflag   = 'A'.
+  gv_dd02v-exclass    = '1'.
+  gv_dd02v-ddtext     = 'Color Panel - Borrow Transaction Header'.
+
+  PERFORM add_field USING 'MANDT'          'MANDT'          'X' '' 'Client'.
+  PERFORM add_field USING 'BORROW_ID'      'ZCP_BORROW_ID'  'X' '' 'Borrow ID (Auto Number)'.
+  PERFORM add_field USING 'TRX_NUMBER'     'ZCP_TRX_NUM'    '' '' 'TRX/{week}/{seq}'.
+  PERFORM add_field USING 'BORROWER_ID'    'ZCP_USER_ID'    '' '' 'FK ZCP_USER (BORROWER)'.
+  PERFORM add_field USING 'BORROWER_NAME'  'ZCP_FULLNAME'   '' '' 'Snapshot Nama Borrower'.
+  PERFORM add_field USING 'BORROWER_NIK'   'ZCP_NIK'        '' '' 'Snapshot NIK'.
+  PERFORM add_field USING 'BORROWER_WC'    'ZCP_WC_CODE'    '' '' 'Snapshot WC Code'.
+  PERFORM add_field USING 'TRX_DATE'       'ZCP_DATUM'      '' '' 'Tanggal Transaksi'.
+  PERFORM add_field USING 'TRX_TIME'       'ZCP_UZEIT'      '' '' 'Jam Transaksi'.
+  PERFORM add_field USING 'EXPECTED_RETURN' 'ZCP_DATUM'     '' '' 'TRX + 90 Hari'.
+  PERFORM add_field USING 'STATUS'         'ZCP_TRX_STAT'   '' '' 'APPROVED/OVERDUE/COMPLETED'.
+  PERFORM add_field USING 'NOTES'          'ZCP_NOTES'      '' '' 'Catatan'.
+  PERFORM add_field USING 'IS_ROTATED'     'ZCP_BOOL'       '' '' 'Y=Pernah Dirotasi'.
+  PERFORM add_field USING 'ROTATION_ID'    'ZCP_ROT_ID'     '' '' 'FK Rotation (Jika Ada)'.
+
+  PERFORM put_table USING 'ZCP_BORROW' gv_dd02v gv_dd03p[].
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_TABLE_ZCP_BORROW_ITM
+*&---------------------------------------------------------------------*
+FORM create_table_zcp_borrow_itm.
+
+  CLEAR: gv_dd02v, gv_dd03p.
+  REFRESH gv_dd03p.
+
+  gv_dd02v-tabname    = 'ZCP_BORROW_ITM'.
+  gv_dd02v-ddlanguage = sy-langu.
+  gv_dd02v-tabclass   = 'APPL'.
+  gv_dd02v-contflag   = 'A'.
+  gv_dd02v-exclass    = '1'.
+  gv_dd02v-ddtext     = 'Color Panel - Borrow Transaction Item'.
+
+  PERFORM add_field USING 'MANDT'          'MANDT'           'X' '' 'Client'.
+  PERFORM add_field USING 'BORROW_ITM_ID'  'ZCP_BORR_ITM'   'X' '' 'Item ID (Auto Number)'.
+  PERFORM add_field USING 'BORROW_ID'      'ZCP_BORROW_ID'  '' '' 'FK ZCP_BORROW'.
+  PERFORM add_field USING 'CP_ID'          'ZCP_CP_ID'      '' '' 'FK ZCP_CP'.
+  PERFORM add_field USING 'COLOR_CODE'     'ZCP_COLOR'      '' '' 'Snapshot Code Color'.
+  PERFORM add_field USING 'BORROWER_ID'    'ZCP_USER_ID'    '' '' 'FK ZCP_USER'.
+  PERFORM add_field USING 'BORROW_DATE'    'ZCP_DATUM'      '' '' 'Tanggal Pinjam'.
+  PERFORM add_field USING 'EXPECTED_RETURN' 'ZCP_DATUM'     '' '' 'Borrow + 90 Hari'.
+  PERFORM add_field USING 'EXPIRED_BEFORE' 'ZCP_DATUM'      '' '' 'Expired Sebelum Pinjam'.
+  PERFORM add_field USING 'EXPIRED_AFTER'  'ZCP_DATUM'      '' '' 'Expired Setelah Pinjam'.
+  PERFORM add_field USING 'BORROW_STATUS'  'ZCP_BORR_STAT'  '' '' 'BORROWED/RETURNED'.
+  PERFORM add_field USING 'ACTUAL_RETURN'  'ZCP_DATUM'      '' '' 'Tanggal Kembali Aktual'.
+
+  PERFORM put_table USING 'ZCP_BORROW_ITM' gv_dd02v gv_dd03p[].
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_TABLE_ZCP_BORROW_ARC
+*&---------------------------------------------------------------------*
+FORM create_table_zcp_borrow_arc.
+
+  CLEAR: gv_dd02v, gv_dd03p.
+  REFRESH gv_dd03p.
+
+  gv_dd02v-tabname    = 'ZCP_BORROW_ARC'.
+  gv_dd02v-ddlanguage = sy-langu.
+  gv_dd02v-tabclass   = 'APPL'.
+  gv_dd02v-contflag   = 'A'.
+  gv_dd02v-exclass    = '1'.
+  gv_dd02v-ddtext     = 'Color Panel - Borrow Archive (Completed)'.
+
+  PERFORM add_field USING 'MANDT'          'MANDT'          'X' '' 'Client'.
+  PERFORM add_field USING 'ARCHIVE_ID'     'ZCP_ARCHIVE_ID' 'X' '' 'Archive ID (Auto Number)'.
+  PERFORM add_field USING 'BORROW_ID'      'ZCP_BORROW_ID'  '' '' 'Original Borrow ID'.
+  PERFORM add_field USING 'TRX_NUMBER'     'ZCP_TRX_NUM'    '' '' 'Original TRX Number'.
+  PERFORM add_field USING 'BORROWER_ID'    'ZCP_USER_ID'    '' '' 'Borrower ID'.
+  PERFORM add_field USING 'BORROWER_NAME'  'ZCP_FULLNAME'   '' '' 'Nama Borrower'.
+  PERFORM add_field USING 'BORROWER_NIK'   'ZCP_NIK'        '' '' 'NIK Borrower'.
+  PERFORM add_field USING 'TRX_DATE'       'ZCP_DATUM'      '' '' 'Tanggal Transaksi'.
+  PERFORM add_field USING 'ACTUAL_RETURN'  'ZCP_DATUM'      '' '' 'Tanggal Kembali'.
+  PERFORM add_field USING 'TOTAL_ITEMS'    'ZCP_COUNT'      '' '' 'Jumlah Item'.
+  PERFORM add_field USING 'TOTAL_DAYS'     'ZCP_COUNT'      '' '' 'Total Hari Pinjam'.
+  PERFORM add_field USING 'ITEMS_SNAPSHOT' 'ZCP_JSON'       '' '' 'JSON Snapshot Items'.
+  PERFORM add_field USING 'ARCHIVED_BY'    'ZCP_USER_ID'    '' '' 'Diarsipkan Oleh'.
+  PERFORM add_field USING 'ARCHIVED_DATE'  'ZCP_DATUM'      '' '' 'Tanggal Arsip'.
+
+  PERFORM put_table USING 'ZCP_BORROW_ARC' gv_dd02v gv_dd03p[].
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form CREATE_TABLE_ZCP_AUDIT_LOG
+*&---------------------------------------------------------------------*
+FORM create_table_zcp_audit_log.
+
+  CLEAR: gv_dd02v, gv_dd03p.
+  REFRESH gv_dd03p.
+
+  gv_dd02v-tabname    = 'ZCP_AUDIT_LOG'.
+  gv_dd02v-ddlanguage = sy-langu.
+  gv_dd02v-tabclass   = 'APPL'.
+  gv_dd02v-contflag   = 'A'.
+  gv_dd02v-exclass    = '1'.
+  gv_dd02v-ddtext     = 'Color Panel - Audit Trail Log'.
+
+  PERFORM add_field USING 'MANDT'       'MANDT'         'X' '' 'Client'.
+  PERFORM add_field USING 'LOG_ID'      'ZCP_LOG_ID'    'X' '' 'Log ID (Auto Number)'.
+  PERFORM add_field USING 'ACTION_TYPE' 'ZCP_ACTION'    '' '' 'LOGIN/CREATE_DCP/DERIVE_MCP/...'.
+  PERFORM add_field USING 'USER_ID'     'ZCP_USER_ID'   '' '' 'FK ZCP_USER'.
+  PERFORM add_field USING 'USER_ROLE'   'ZCP_ROLE'      '' '' 'IT/BORROWER/QC'.
+  PERFORM add_field USING 'DETAILS'     'ZCP_DETAILS'   '' '' 'Deskripsi Aksi'.
+  PERFORM add_field USING 'TIMESTAMP'   'ZCP_TIMESTAMP' '' '' 'Waktu Aksi'.
+  PERFORM add_field USING 'IP_ADDR'     'ZCP_IP_ADDR'   '' '' 'IP Address'.
+
+  PERFORM put_table USING 'ZCP_AUDIT_LOG' gv_dd02v gv_dd03p[].
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form ADD_FIELD
+*&---------------------------------------------------------------------*
+FORM add_field USING p_fname TYPE clike
+                     p_rollname TYPE clike
+                     p_keyflag TYPE clike
+                     p_notnull TYPE clike
+                     p_ddtext TYPE clike.
+
+  CLEAR gv_dd03p.
+  gv_dd03p-fieldname  = p_fname.
+  gv_dd03p-rollname   = p_rollname.
+  gv_dd03p-keyflag    = p_keyflag.
+  gv_dd03p-notnull    = p_notnull.
+  gv_dd03p-ddlanguage = sy-langu.
+  gv_dd03p-ddtext     = p_ddtext.
+  APPEND gv_dd03p.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form PUT_TABLE
+*&---------------------------------------------------------------------*
+FORM put_table USING p_tabname TYPE clike
+                     p_dd02v TYPE dd02v
+                     p_dd03p TYPE TABLE.
+
+  DATA: lv_subrc  TYPE sy-subrc,
+        lv_msg    TYPE char100,
+        ls_result TYPE ty_result.
+
+  ls_result-tabname = p_tabname.
+
+* Check if table already exists
+  DATA: ls_dd02v_check TYPE dd02v.
+  CALL FUNCTION 'DDIF_TABL_GET'
+    EXPORTING
+      name          = p_tabname
+      state         = 'A'
+    IMPORTING
+      dd02v_wa      = ls_dd02v_check
+    EXCEPTIONS
+      illegal_input = 1
+      OTHERS        = 2.
+
+  IF sy-subrc = 0 AND ls_dd02v_check-tabname IS NOT INITIAL.
+    ls_result-status  = 'EXISTS'.
+    ls_result-message = 'Table already exists - skipped'.
+    APPEND ls_result TO gt_result.
+    RETURN.
+  ENDIF.
+
+* Test mode: display only
+  IF p_test = 'X'.
+    ls_result-status  = 'WOULD CREATE'.
+    ls_result-message = 'Test mode - table would be created'.
+    APPEND ls_result TO gt_result.
+    RETURN.
+  ENDIF.
+
+* Create table
+  CALL FUNCTION 'DDIF_TABL_PUT'
+    EXPORTING
+      name      = p_tabname
+      dd02v_wa  = p_dd02v
+      dd03p_tab = p_dd03p
+    EXCEPTIONS
+      OTHERS    = 1.
+
+  IF sy-subrc = 0.
+    ls_result-status  = 'CREATED'.
+    ls_result-message = 'Table created successfully in DDIC'.
+  ELSE.
+    ls_result-status  = 'ERROR'.
+    ls_result-message = 'Failed to create table'.
+  ENDIF.
+
+  APPEND ls_result TO gt_result.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form ACTIVATE_ALL_TABLES
+*&---------------------------------------------------------------------*
+FORM activate_all_tables.
+
+  DATA: lv_tabname TYPE dd02l-tabname.
+  DATA: ls_result TYPE ty_result.
+
+  LOOP AT gt_result INTO ls_result WHERE status = 'CREATED'.
+    lv_tabname = ls_result-tabname.
+
+    CALL FUNCTION 'DDIF_TABL_ACTIVATE'
+      EXPORTING
+        name      = lv_tabname
+      EXCEPTIONS
+        not_found = 1
+        OTHERS    = 2.
+
+    IF sy-subrc = 0.
+      ls_result-status  = 'ACTIVATED'.
+      ls_result-message = 'Table activated'.
+    ELSE.
+      ls_result-status  = 'ACTIV_ERR'.
+      ls_result-message = 'Activation failed - activate manually in SE11'.
+    ENDIF.
+
+    MODIFY gt_result FROM ls_result.
+  ENDLOOP.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_RESULTS
+*&---------------------------------------------------------------------*
+FORM display_results.
+
+  WRITE: / '========================================================'.
+  WRITE: / 'Color Panel Z-Tables Creation Report'.
+  WRITE: / 'Date:', sy-datum, 'Time:', sy-uzeit.
+  WRITE: / 'Mode:', COND char20( WHEN p_test = 'X' THEN 'TEST (dry run)' ELSE 'CREATE' ).
+  WRITE: / '========================================================'.
+  WRITE: /.
+
+  LOOP AT gt_result INTO DATA(ls_r).
+    WRITE: / ls_r-tabname(20), '|', ls_r-status(15), '|', ls_r-message.
+  ENDLOOP.
+
+  WRITE: /.
+  WRITE: / '========================================================'.
+  WRITE: / 'Total tables processed:', lines( gt_result ).
+  WRITE: /.
+  WRITE: / 'NEXT STEPS:'.
+  WRITE: / '1. Check tables in SE11 (dictionary)'.
+  WRITE: / '2. Activate all tables if not auto-activated'.
+  WRITE: / '3. Create Data Elements (ZCP_*) if missing'.
+  WRITE: / '4. Create Table Maintenance Generator for master tables'.
+  WRITE: / '5. Create Number Range objects (SNRO)'.
+  WRITE: / '========================================================'.
+
+ENDFORM.

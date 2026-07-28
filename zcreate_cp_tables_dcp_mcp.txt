@@ -1,0 +1,291 @@
+*&---------------------------------------------------------------------*
+*& Color Panel — Table Creation Report (DCP + MCP Phase)
+*& Tanggal: 21 Juli 2026
+*& Author: Arya / Yogi — KMI
+*&---------------------------------------------------------------------*
+*& Tables:
+*&   1. ZCP_COLOR_CODE   — Master Color Code (1:1 FERT)
+*&   2. ZCP_REQUEST      — Request-DCP dari Sales
+*&   3. ZCP_SO_IMPORT    — Tracking import SO (anti duplikat)
+*&   4. ZCP_DCP_HDR      — Header DCP
+*&   5. ZCP_DCP_ITEM     — Item DCP (per panel)
+*&   6. ZCP_MCP_HDR      — Header MCP
+*&   7. ZCP_MCP_ITEM     — Item MCP (per panel)
+*&   8. ZCP_USER         — User & Role
+*&   9. ZCP_BUYER        — Master Buyer
+*&  10. ZCP_AUDIT_LOG    — Audit Trail
+*&  11. ZCP_PHOTO        — Foto upload (DMS link)
+*&---------------------------------------------------------------------*
+
+REPORT zcreate_color_panel_tables.
+
+*----------------------------------------------------------------------*
+* Table Definitions
+*----------------------------------------------------------------------*
+
+*----------------------------------------------------------------------*
+* 1. ZCP_COLOR_CODE — Master Color Code
+*    1:1 dengan FERT Material Master
+*    Entitas info saja, tidak punya panel fisik
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_color_code,
+         mandt       TYPE mandt,
+         color_code  TYPE char20,        " Primary Key — kode warna unik
+         matnr       TYPE matnr,         " Material Number (FERT) — 1:1
+         maktx       TYPE maktx,         " Material Description
+         buyer_id    TYPE char10,         " Buyer (ref ZCP_BUYER)
+         color_name  TYPE char60,         " Nama warna
+         color_hex   TYPE char7,          " Kode hex warna (#FFFFFF)
+         component   TYPE char40,         " Komponen warna (solid/veneer/dll)
+         status      TYPE char1,          " A=Active, I=Inactive, O=Obsolete
+         remarks     TYPE char200,        " Catatan
+         created_by  TYPE syuname,
+         created_at  TYPE timestamp,
+         changed_by  TYPE syuname,
+         changed_at  TYPE timestamp,
+       END OF ty_color_code.
+
+*----------------------------------------------------------------------*
+* 2. ZCP_REQUEST — Request-DCP dari Sales
+*    Pra-DCP, entitas info saja (belum ada panel fisik)
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_request,
+         mandt         TYPE mandt,
+         request_id    TYPE char20,       " Primary Key — REQ-YYYY-XXXX
+         so_number     TYPE char20,       " Referensi SO dari Sales
+         sales_user    TYPE syuname,      " Sales yang request
+         buyer_id      TYPE char10,       " Buyer (ref ZCP_BUYER)
+         request_date  TYPE datum,        " Tanggal request
+         status        TYPE char1,        " P=Pending, A=Approved, R=Rejected
+         reject_reason TYPE char200,      " Alasan reject (jika ada)
+         approved_by   TYPE syuname,      " Admin yang approve
+         approved_at   TYPE timestamp,    " Waktu approve
+         remarks       TYPE char200,      " Catatan
+         created_by    TYPE syuname,
+         created_at    TYPE timestamp,
+         changed_by    TYPE syuname,
+         changed_at    TYPE timestamp,
+       END OF ty_request.
+
+*----------------------------------------------------------------------*
+* 3. ZCP_SO_IMPORT — Tracking Import SO (Anti Duplikat)
+*    1 SO hanya berlaku 1x transaksi per material
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_so_import,
+         mandt         TYPE mandt,
+         so_number     TYPE char20,       " SO Number
+         so_item       TYPE char6,        " SO Item Number (000010, dst)
+         matnr         TYPE matnr,        " Material Number dari SO
+         menge         TYPE menge_d,      " Quantity dari SO
+         meins         TYPE meins,        " Unit of Measure
+         request_id    TYPE char20,       " Link ke ZCP_REQUEST
+         dcp_id        TYPE char20,       " Link ke ZCP_DCP_HDR (setelah create)
+         imported_by   TYPE syuname,      " Siapa yang import
+         imported_at   TYPE timestamp,    " Kapan di-import
+         remarks       TYPE char200,
+         created_by    TYPE syuname,
+         created_at    TYPE timestamp,
+       END OF ty_so_import.
+
+*----------------------------------------------------------------------*
+* 4. ZCP_DCP_HDR — Header DCP
+*    1 material = 1 DCP header
+*    Referensi: SO + Request
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_dcp_hdr,
+         mandt         TYPE mandt,
+         dcp_id        TYPE char20,       " Primary Key — DCP-YYYY-XXXX
+         request_id    TYPE char20,       " Link ke ZCP_REQUEST
+         so_number     TYPE char20,       " Referensi SO
+         so_item       TYPE char6,        " SO Item (material tertentu)
+         matnr         TYPE matnr,        " Material Number (FERT)
+         maktx         TYPE maktx,        " Material Description
+         color_code    TYPE char20,       " Link ke ZCP_COLOR_CODE
+         buyer_id      TYPE char10,       " Buyer
+         sales_user    TYPE syuname,      " Sales yang request
+         qty_total     TYPE int4,         " Total panel (dari SO)
+         qty_active    TYPE int4,         " Panel yang sudah aktif
+         qty_approved  TYPE int4,         " Panel yang sudah approve
+         qty_rejected  TYPE int4,         " Panel yang reject
+         mfg_date      TYPE datum,        " Manufacturing Date (panel pertama)
+         expire_date   TYPE datum,        " Expired Date (max 1 tahun dari mfg)
+         reminder_date TYPE datum,        " Reminder Date (2 bulan dari create)
+         status        TYPE char1,        " O=Open, A=Approved, R=Rejected, C=Closed
+         closed_by     TYPE syuname,
+         closed_at     TYPE timestamp,
+         close_reason  TYPE char200,      " Alasan close/reject
+         remarks       TYPE char200,
+         created_by    TYPE syuname,
+         created_at    TYPE timestamp,
+         changed_by    TYPE syuname,
+         changed_at    TYPE timestamp,
+       END OF ty_dcp_hdr.
+
+*----------------------------------------------------------------------*
+* 5. ZCP_DCP_ITEM — Item DCP (Per Panel)
+*    Setiap panel fisik = 1 baris
+*    Qty dari SO, status default non-aktif
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_dcp_item,
+         mandt         TYPE mandt,
+         dcp_id        TYPE char20,       " Header (ref ZCP_DCP_HDR)
+         panel_number  TYPE int4,         " Nomor panel (1, 2, 3, ... qty)
+         panel_id      TYPE char30,       " Unique ID per panel (DCP-XXXX-001)
+         qr_token      TYPE char64,       " QR token unik untuk scan
+         status        TYPE char2,        " NA=Non-Aktif, AK=Aktif, SB=Submitted,
+*                                           AP=Approved, RJ=Rejected, OB=Obsolete
+         mfg_date      TYPE datum,        " Tanggal dibuat (bebas, admin input)
+         activated_at  TYPE timestamp,    " Waktu aktivasi
+         activated_by  TYPE syuname,      " Admin yang aktivasi
+         submitted_at  TYPE timestamp,    " Waktu submit foto
+         submitted_by  TYPE syuname,      " Admin yang submit
+         approved_at   TYPE timestamp,    " Waktu approve
+         approved_by   TYPE syuname,      " Admin yang approve (upload foto)
+         rejected_at   TYPE timestamp,
+         rejected_by   TYPE syuname,
+         reject_reason TYPE char200,
+         undo_flag     TYPE char1,        " X = pernah di-undo (fitur kembalikan)
+         mcp_id        TYPE char20,       " Link ke MCP (setelah jadi MCP)
+         photo_count   TYPE int4,         " Jumlah foto yang di-upload (min 2)
+         remarks       TYPE char200,
+         created_by    TYPE syuname,
+         created_at    TYPE timestamp,
+         changed_by    TYPE syuname,
+         changed_at    TYPE timestamp,
+       END OF ty_dcp_item.
+
+*----------------------------------------------------------------------*
+* 6. ZCP_MCP_HDR — Header MCP
+*    DCP yang sudah approve → langsung jadi MCP
+*    Min 3 panel approve untuk close
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_mcp_hdr,
+         mandt         TYPE mandt,
+         mcp_id        TYPE char20,       " Primary Key — MCP-YYYY-XXXX
+         dcp_id        TYPE char20,       " Link ke ZCP_DCP_HDR (asal)
+         so_number     TYPE char20,       " Referensi SO (sama dengan DCP)
+         matnr         TYPE matnr,        " Material Number
+         maktx         TYPE maktx,        " Material Description
+         color_code    TYPE char20,       " Link ke ZCP_COLOR_CODE
+         buyer_id      TYPE char10,       " Buyer
+         qty_total     TYPE int4,         " Total panel masuk MCP
+         qty_approved  TYPE int4,         " Panel yang MCP-APPROVED (min 3)
+         qty_obsolete  TYPE int4,         " Panel yang OBSOLETE
+         mfg_date      TYPE datum,        " Dari DCP (tidak reset)
+         expire_date   TYPE datum,        " Expired (1 tahun dari mfg DCP)
+         renewal_date  TYPE datum,        " Tanggal renewal terakhir
+         status        TYPE char1,        " O=Open, A=Approved/Closed, R=Rejected
+         closed_by     TYPE syuname,
+         closed_at     TYPE timestamp,
+         is_renewed    TYPE char1,        " X = sudah pernah di-renew
+         parent_mcp_id TYPE char20,       " MCP sebelumnya (jika renewal)
+         remarks       TYPE char200,
+         created_by    TYPE syuname,
+         created_at    TYPE timestamp,
+         changed_by    TYPE syuname,
+         changed_at    TYPE timestamp,
+       END OF ty_mcp_hdr.
+
+*----------------------------------------------------------------------*
+* 7. ZCP_MCP_ITEM — Item MCP (Per Panel)
+*    Panel DCP yang approved → langsung jadi MCP item
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_mcp_item,
+         mandt         TYPE mandt,
+         mcp_id        TYPE char20,       " Header (ref ZCP_MCP_HDR)
+         panel_number  TYPE int4,         " Nomor panel (sama dari DCP)
+         panel_id      TYPE char30,       " Unique ID per panel (MCP-XXXX-001)
+         dcp_panel_id  TYPE char30,       " Link ke panel DCP asal
+         qr_token      TYPE char64,       " QR token unik (bisa baru atau sama)
+         status        TYPE char2,        " AP=Approved, OB=Obsolete
+         mfg_date      TYPE datum,        " Dari DCP (tidak reset)
+         expire_date   TYPE datum,        " Expired panel
+         approved_at   TYPE timestamp,
+         approved_by   TYPE syuname,
+         obsolete_at   TYPE timestamp,
+         obsolete_by   TYPE syuname,
+         obsolete_reason TYPE char200,    " Alasan obsolete (close/renewal)
+         remarks       TYPE char200,
+         created_by    TYPE syuname,
+         created_at    TYPE timestamp,
+         changed_by    TYPE syuname,
+         changed_at    TYPE timestamp,
+       END OF ty_mcp_item.
+
+*----------------------------------------------------------------------*
+* 8. ZCP_USER — User & Role Management
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_user,
+         mandt      TYPE mandt,
+         user_id    TYPE char20,          " Primary Key
+         username   TYPE syuname,         " SAP Username
+         full_name  TYPE char60,          " Nama lengkap
+         role       TYPE char10,          " SALES/ADMIN/QC/IT
+         buyer_id   TYPE char10,          " Buyer (khusus role SALES)
+         is_active  TYPE char1,           " X = aktif
+         email      TYPE char100,
+         phone      TYPE char20,
+         created_by TYPE syuname,
+         created_at TYPE timestamp,
+         changed_by TYPE syuname,
+         changed_at TYPE timestamp,
+       END OF ty_user.
+
+*----------------------------------------------------------------------*
+* 9. ZCP_BUYER — Master Buyer
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_buyer,
+         mandt      TYPE mandt,
+         buyer_id   TYPE char10,          " Primary Key
+         buyer_name TYPE char60,          " Nama buyer
+         company    TYPE char60,          " Nama perusahaan
+         country    TYPE land1,           " Negara
+         contact    TYPE char60,          " Contact person
+         email      TYPE char100,
+         phone      TYPE char20,
+         is_active  TYPE char1,           " X = aktif
+         remarks    TYPE char200,
+         created_by TYPE syuname,
+         created_at TYPE timestamp,
+         changed_by TYPE syuname,
+         changed_at TYPE timestamp,
+       END OF ty_buyer.
+
+*----------------------------------------------------------------------*
+* 10. ZCP_PHOTO — Foto Upload (Link ke DMS)
+*     Minimal 2 foto per panel submit
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_photo,
+         mandt        TYPE mandt,
+         photo_id     TYPE char20,        " Primary Key
+         ref_type     TYPE char4,         " DCP atau MCP
+         ref_id       TYPE char20,        " DCP_ID atau MCP_ID
+         panel_number TYPE int4,          " Panel number
+         photo_seq    TYPE int4,          " Urutan foto (1, 2, 3, ...)
+         dms_doc_type TYPE char4,         " ZDCP / ZMCP
+         dms_docnum   TYPE char25,        " DMS Document Number
+         dms_docpart  TYPE char3,         " DMS Document Part
+         dms_docvers  TYPE char2,         " DMS Document Version
+         file_name    TYPE char100,       " Nama file asli
+         uploaded_by  TYPE syuname,
+         uploaded_at  TYPE timestamp,
+         created_by   TYPE syuname,
+         created_at   TYPE timestamp,
+       END OF ty_photo.
+
+*----------------------------------------------------------------------*
+* 11. ZCP_AUDIT_LOG — Audit Trail
+*----------------------------------------------------------------------*
+TYPES: BEGIN OF ty_audit_log,
+         mandt       TYPE mandt,
+         log_id      TYPE char20,         " Primary Key
+         ref_type    TYPE char4,          " REQ/DCP/MCP
+         ref_id      TYPE char20,         " ID entitas terkait
+         action      TYPE char20,         " CREATE/APPROVE/REJECT/ACTIVATE/UNDO/RENEW/dll
+         old_value   TYPE char200,        " Value sebelum
+         new_value   TYPE char200,        " Value sesudah
+         description TYPE char200,        " Deskripsi aksi
+         action_by   TYPE syuname,
+         action_at   TYPE timestamp,
+         ip_address  TYPE char15,
+       END OF ty_audit_log.
