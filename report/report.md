@@ -96,10 +96,28 @@ Berjalan. Step 1–4 (penulisan file) selesai 28 Juli. Step 5 (pembuatan objek d
 |:---:|---|:---:|---|
 | 5a | Sepuluh tabel transparan di SE11 | ✅ | 29 Jul 2026 |
 | 5b | Enam secondary index | ✅ | 29 Jul 2026 |
-| 5c | Lock object `EZCP_SO` | ⬜ | — |
-| 5d | Lima objek number range di SNRO + interval 01 | ⬜ | — |
+| 5c | Lock object `EZCP_SO` | ✅ | 29 Jul 2026 |
+| 5d | Lima objek number range di SNRO + interval 01 | 🟡 | — |
 | 5e | Message class `ZCP` di SE91 | ⬜ | — |
 | 5f | Table Maintenance Generator `ZCP_BUYER` | ⬜ | — |
+
+### Rincian Step 5d — number range
+
+| | Bagian | Status | Tanggal |
+|:---:|---|:---:|---|
+| 5d-1 | Tentukan number length domain | ✅ | 29 Jul 2026 |
+| 5d-2 | Buat lima objek number range | ✅ | 29 Jul 2026 |
+| 5d-3 | Buat interval `01` untuk kelima objek | ⬜ | — |
+
+Number length domain memakai bawaan SAP, bukan bikin sendiri:
+
+| Object | Domain | Panjang | To-year flag |
+|---|:---:|:---:|:---:|
+| `ZCP_COLOR` | `NUM5` | 5 | tidak |
+| `ZCP_REQ` | `NUM4` | 4 | **ya** |
+| `ZCP_DCP` | `NUM4` | 4 | **ya** |
+| `ZCP_PHOTO` | `NUM9` | 9 | tidak |
+| `ZCP_AUDIT` | `NUM12` | 12 | tidak |
 
 ### Sepuluh tabel — semua Active, terverifikasi lewat SE16N
 
@@ -270,6 +288,16 @@ Berjalan. Step 1–4 (penulisan file) selesai 28 Juli. Step 5 (pembuatan objek d
 
 ## Titik Lanjut Berikutnya
 
-**Task 3 Step 5c** — lock object `EZCP_SO` di SE11. Primary table `ZCP_SO_IMPORT`, lock mode `E`, parameter kunci `SO_NUMBER` saja (`SO_ITEM` dihapus dari daftar parameter).
+**Task 3 Step 5d-3** — mengisi interval `01` untuk kelima objek number range di SNRO. Jalurnya: `SNRO -> Object -> Number ranges -> Change Intervals -> Insert Interval -> Save`.
 
-Setelah itu berturut-turut: SNRO, SE91, TMG `ZCP_BUYER`, lalu commit penutup Task 3.
+| Object | No | From number | To number | Year |
+|---|:---:|---|---|:---:|
+| `ZCP_COLOR` | `01` | `00001` | `99999` | — |
+| `ZCP_REQ` | `01` | `0001` | `9999` | `2026` |
+| `ZCP_DCP` | `01` | `0001` | `9999` | `2026` |
+| `ZCP_PHOTO` | `01` | `000000001` | `999999999` | — |
+| `ZCP_AUDIT` | `01` | `000000000001` | `999999999999` | — |
+
+Kolom `Ext` jangan dicentang. Interval belum jadi sampai tombol Save ditekan &mdash; baris yang muncul di grid saja belum tersimpan.
+
+Setelah itu berturut-turut: SE91 message class `ZCP`, TMG `ZCP_BUYER`, lalu commit penutup Task 3.

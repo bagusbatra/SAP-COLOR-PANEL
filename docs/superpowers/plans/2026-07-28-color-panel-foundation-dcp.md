@@ -16,10 +16,10 @@
 |---|---|
 | Task 1 &mdash; Inisialisasi repo | Selesai |
 | Task 2 &mdash; Domain dan data element | Selesai, 6 domain + 18 data element Active di SE11 |
-| Task 3 &mdash; Tabel dkk | **Sebagian** &mdash; 10 tabel + 6 index Active; lock object, SNRO, SE91, TMG belum |
+| Task 3 &mdash; Tabel dkk | **Sebagian** &mdash; 10 tabel + 6 index + lock object `EZCP_SO` Active; 5 objek SNRO dibuat tapi intervalnya belum; SE91 dan TMG belum |
 | Task 4 dan seterusnya | Belum mulai |
 
-**Titik lanjut berikutnya:** Task 3 Step 5, sisa empat objek &mdash; lock object `EZCP_SO`, lima number range di SNRO, message class `ZCP` di SE91, Table Maintenance Generator untuk `ZCP_BUYER`.
+**Titik lanjut berikutnya:** mengisi interval `01` untuk kelima objek number range di SNRO, lalu message class `ZCP` di SE91 dan Table Maintenance Generator untuk `ZCP_BUYER`.
 
 Catatan dari pengerjaan Task 3 yang tidak ada di langkah asli:
 
@@ -404,8 +404,8 @@ No   Text
 
   - [x] Sepuluh tabel dibuat dan Active di SE11, terverifikasi lewat SE16N
   - [x] Enam secondary index dibuat dan aktif: `ZCP_COLOR_CODE~MAT` (unique), `ZCP_REQUEST~SO`, `ZCP_DCP_HDR~REQ`, `ZCP_DCP_ITEM~PID` (unique), `ZCP_PHOTO~REF`, `ZCP_AUDIT_LOG~REF`
-  - [ ] Lock object `EZCP_SO`
-  - [ ] Lima objek number range di SNRO beserta interval 01
+  - [x] Lock object `EZCP_SO` &mdash; primary table `ZCP_SO_IMPORT`, mode `E`, parameter `SO_NUMBER` saja setelah `SO_ITEM` dihapus dari daftar bawaan
+  - [~] Lima objek number range di SNRO &mdash; objek dibuat dengan domain `NUM5`/`NUM4`/`NUM4`/`NUM9`/`NUM12`, buffering mati; **interval 01 belum dibuat**
   - [ ] Message class `ZCP` dengan 20 pesan di SE91
   - [ ] Table Maintenance Generator untuk `ZCP_BUYER`
 

@@ -4,7 +4,7 @@ Satu file per tanggal, format nama `YYYY-MM-DD.md` supaya urut sendiri di file e
 
 | Tanggal | Hari | Fokus | Task tersentuh |
 |---|---|---|---|
-| [2026-07-29](2026-07-29.md) | Rabu | Sepuluh tabel dan enam index di SE11 | Task 3 Step 5 (sebagian) |
+| [2026-07-29](2026-07-29.md) | Rabu | 10 tabel, 6 index, lock object, 5 objek number range | Task 3 Step 5 (sebagian) |
 | [2026-07-28](2026-07-28.md) | Selasa | Inisialisasi repo, file DDIC, domain dan data element | Task 1, Task 2, Task 3 Step 1&ndash;4 |
 
 Checkpoint per task dan per step ada di `../report.md`.
