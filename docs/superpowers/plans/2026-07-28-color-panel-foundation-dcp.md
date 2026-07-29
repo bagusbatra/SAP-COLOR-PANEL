@@ -10,6 +10,24 @@
 
 **Spec:** `docs/superpowers/specs/2026-07-28-color-panel-foundation-dcp-design.md`
 
+## Checkpoint Terakhir &mdash; 29 Juli 2026
+
+| Task | Status |
+|---|---|
+| Task 1 &mdash; Inisialisasi repo | Selesai |
+| Task 2 &mdash; Domain dan data element | Selesai, 6 domain + 18 data element Active di SE11 |
+| Task 3 &mdash; Tabel dkk | **Sebagian** &mdash; 10 tabel + 6 index Active; lock object, SNRO, SE91, TMG belum |
+| Task 4 dan seterusnya | Belum mulai |
+
+**Titik lanjut berikutnya:** Task 3 Step 5, sisa empat objek &mdash; lock object `EZCP_SO`, lima number range di SNRO, message class `ZCP` di SE91, Table Maintenance Generator untuk `ZCP_BUYER`.
+
+Catatan dari pengerjaan Task 3 yang tidak ada di langkah asli:
+
+1. **Enhancement Category wajib diisi manual** tiap tabel lewat `Extras -> Enhancement Category`, kalau tidak muncul warning tiap aktivasi. Pilih `Can Be Enhanced (Character-Type or Numeric)` untuk sembilan tabel; `ZCP_PHOTO` harus `Can Be Enhanced (Deep)` karena punya field `RAWSTRING`, dan salah pilih di situ membuat aktivasi gagal, bukan sekadar warning.
+2. **`PHOTO_DATA` tidak boleh dicentang Initial Values.** Field `RAWSTRING` menolak flag `NOT NULL` dengan error `Too long for activation of 'not null' flag (>255)`. Semua field lain di semua tabel tetap dicentang.
+3. **Field `MENGE` (`MENGE_D`) wajib punya reference field** di tab `Currency/Quantity Fields`, menunjuk ke `MEINS` di tabel yang sama. Berlaku di `ZCP_REQUEST_ITM` dan `ZCP_SO_IMPORT`. Tanpa itu aktivasi gagal.
+4. **Index dibuat terpisah setelah tabel Active**, dan `MANDT` harus diketik manual sebagai field pertama &mdash; SE11 tidak menambahkannya otomatis seperti pada primary key.
+
 ## Global Constraints
 
 Berlaku untuk **setiap** task. Tidak diulang di tiap langkah.
@@ -80,7 +98,7 @@ Pembagiannya per tanggung jawab, bukan per layer: satu kelas memegang satu atura
 - Consumes: tidak ada
 - Produces: repo git aktif dan struktur folder yang dipakai semua task berikutnya
 
-- [ ] **Step 1: Inisialisasi git dan buat struktur folder**
+- [x] **Step 1: Inisialisasi git dan buat struktur folder**
 
 ```bash
 cd "D:/DEV/SAP COLOR PANEL"
@@ -88,7 +106,7 @@ git init
 mkdir -p src/01_ddic/tables src/02_classes src/03_reports src/04_bsp/zbsp_color_panel
 ```
 
-- [ ] **Step 2: Buat `.gitignore`**
+- [x] **Step 2: Buat `.gitignore`**
 
 ```
 *.tmp
@@ -98,7 +116,7 @@ Thumbs.db
 desktop.ini
 ```
 
-- [ ] **Step 3: Buat `README.md`**
+- [x] **Step 3: Buat `README.md`**
 
 ```markdown
 # Color Panel Management System &mdash; SAP S/4HANA 1809
@@ -128,12 +146,12 @@ jadi setiap perubahan ditulis di sini lebih dulu, baru di-paste ke SAP.
 4. Identitas pelaku selalu USER_ID dari session, tidak pernah SY-UNAME
 ```
 
-- [ ] **Step 4: Verifikasi struktur terbentuk**
+- [x] **Step 4: Verifikasi struktur terbentuk**
 
 Run: `git status --short && ls src`
 Expected: `.gitignore` dan `README.md` muncul sebagai untracked; folder `01_ddic 02_classes 03_reports 04_bsp` terdaftar.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .gitignore README.md docs
@@ -154,7 +172,7 @@ git commit -m "chore: inisialisasi repo color panel dengan spec dan plan"
 
 Status memakai domain berdaftar nilai tetap supaya SM30 menampilkan teks dan nilai salah tertangkap saat aktivasi tabel, bukan saat produksi.
 
-- [ ] **Step 1: Tulis `src/01_ddic/domains.txt`**
+- [x] **Step 1: Tulis `src/01_ddic/domains.txt`**
 
 ```
 DOMAIN ZCP_DOM_ROLE
@@ -202,7 +220,7 @@ DOMAIN ZCP_DOM_CC_ST
     O   Obsolete
 ```
 
-- [ ] **Step 2: Tulis `src/01_ddic/data_elements.txt`**
+- [x] **Step 2: Tulis `src/01_ddic/data_elements.txt`**
 
 ```
 Data Element          Domain / Type      Field Label (Medium)
@@ -231,17 +249,17 @@ tidak dibuatkan ZCP_DE_ sendiri:
   MATNR, MAKTX, VBELN, POSNR, MENGE_D, MEINS, LAND1, DATUM, TIMESTAMP
 ```
 
-- [ ] **Step 3: Buat domain di SE11**
+- [x] **Step 3: Buat domain di SE11**
 
 Jalankan SE11 untuk tiap domain di `domains.txt`: pilih Domain, isi nama, isi Data Type dan Length di tab Definition, isi Fixed Values di tab Value Range, lalu aktifkan.
 Expected: keenam domain berstatus Active. Cek dengan SE11 &rarr; Domain &rarr; Display: kolom Fixed Values terisi lengkap.
 
-- [ ] **Step 4: Buat data element di SE11**
+- [x] **Step 4: Buat data element di SE11**
 
 Jalankan SE11 untuk tiap baris di `data_elements.txt`: pilih Data Type &rarr; Data Element, isi Domain (atau predefined type untuk CHAR20/CHAR10/NUMC3), isi Field Label pada tab Field Label, lalu aktifkan.
 Expected: seluruh data element `ZCP_DE_*` berstatus Active.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/01_ddic/domains.txt src/01_ddic/data_elements.txt
@@ -264,7 +282,7 @@ git commit -m "feat(ddic): domain fixed-value dan data element ZCP"
 
 Semua tabel: Delivery Class `A`, Data Browser/Table View Maintenance `Display/Maintenance Allowed`, Technical Settings Data Class `APPL1` (master) atau `APPL0` (transaksi), Size Category `1` kecuali `ZCP_PHOTO` dan `ZCP_AUDIT_LOG` yang memakai `3`.
 
-- [ ] **Step 1: Tulis file definisi sepuluh tabel**
+- [x] **Step 1: Tulis file definisi sepuluh tabel**
 
 Isi tiap file mengikuti bagian 3 spec. Format tiap file:
 
@@ -311,7 +329,7 @@ ZCP_AUDIT_LOG   INDEX REF (non-unique)  MANDT, REF_TYPE, REF_ID
 
 `ZCP_REQUEST` sengaja non-unique pada `SO_NUMBER`: material yang ditolak harus bisa diajukan ulang dalam request baru dengan nomor SO yang sama.
 
-- [ ] **Step 2: Tulis `src/01_ddic/lock_objects.txt`**
+- [x] **Step 2: Tulis `src/01_ddic/lock_objects.txt`**
 
 ```
 LOCK OBJECT EZCP_SO
@@ -326,7 +344,7 @@ LOCK OBJECT EZCP_SO
     DEQUEUE_EZCP_SO
 ```
 
-- [ ] **Step 3: Tulis `src/01_ddic/snro.txt`**
+- [x] **Step 3: Tulis `src/01_ddic/snro.txt`**
 
 ```
 SNRO OBJECT ZCP_COLOR       Number Length 5    To-Year Flag: NO
@@ -353,7 +371,7 @@ Catatan: To-Year Flag YES berarti pemanggilan NUMBER_GET_NEXT wajib mengisi
 parameter TOYEAR, dan penomoran mulai dari 0001 lagi tiap tahun.
 ```
 
-- [ ] **Step 4: Tulis `src/01_ddic/messages_zcp.txt`**
+- [x] **Step 4: Tulis `src/01_ddic/messages_zcp.txt`**
 
 ```
 MESSAGE CLASS ZCP - Color Panel
@@ -382,7 +400,14 @@ No   Text
 020  User &1 sudah terdaftar
 ```
 
-- [ ] **Step 5: Buat semua objek di sistem SAP**
+- [~] **Step 5: Buat semua objek di sistem SAP** &mdash; SEBAGIAN, per 29 Juli 2026
+
+  - [x] Sepuluh tabel dibuat dan Active di SE11, terverifikasi lewat SE16N
+  - [x] Enam secondary index dibuat dan aktif: `ZCP_COLOR_CODE~MAT` (unique), `ZCP_REQUEST~SO`, `ZCP_DCP_HDR~REQ`, `ZCP_DCP_ITEM~PID` (unique), `ZCP_PHOTO~REF`, `ZCP_AUDIT_LOG~REF`
+  - [ ] Lock object `EZCP_SO`
+  - [ ] Lima objek number range di SNRO beserta interval 01
+  - [ ] Message class `ZCP` dengan 20 pesan di SE91
+  - [ ] Table Maintenance Generator untuk `ZCP_BUYER`
 
 Urutan: SE11 buat sepuluh tabel dan aktifkan &rarr; SE11 buat lock object `EZCP_SO` dan aktifkan &rarr; SNRO buat lima objek beserta interval 01 &rarr; SE91 buat message class `ZCP` dan seluruh nomor pesan &rarr; SE11 generate Table Maintenance untuk `ZCP_BUYER` saja (Function Group `ZFGP_COLOR_PANEL`, auth group `&NC&`, one-step).
 Expected: sepuluh tabel Active dan bisa dibuka di SE16N; `ENQUEUE_EZCP_SO` muncul di SE37; `SNRO &rarr; ZCP_COLOR &rarr; Number Ranges` menampilkan interval 01; SM30 `ZCP_BUYER` bisa dibuka dan menyimpan satu baris uji.

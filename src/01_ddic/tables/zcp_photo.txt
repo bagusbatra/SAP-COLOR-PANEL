@@ -32,3 +32,16 @@ sub-proyek 4 memindahkannya ke DMS.
 
 Catatan: batas ukuran maksimum 2 MB per foto, divalidasi di sisi klien dan
 diulang di server. Validasi klien saja tidak cukup, gampang dilewati.
+
+Catatan aktivasi SE11 (dua-duanya bikin aktivasi GAGAL, bukan warning):
+  1. Enhancement Category harus "Can Be Enhanced (Deep)", bukan
+     "Character-Type or Numeric" seperti sembilan tabel lain. Penyebabnya
+     PHOTO_DATA bertipe RAWSTRING, dan tipe panjang variabel masuk kategori
+     deep. Diisi lewat menu Extras -> Enhancement Category.
+  2. PHOTO_DATA TIDAK boleh dicentang "Initial Values". Flag itu berarti
+     NOT NULL di database, dan RAWSTRING menolaknya dengan pesan
+     "Too long for activation of 'not null' flag (>255)". Semua field lain
+     tetap dicentang.
+
+Catatan: PHOTO_DATA diisi Data Type RAWSTRING dengan kolom Length DIKOSONGKAN.
+Panjangnya ditentukan isi data, bukan didefinisikan di muka.

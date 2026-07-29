@@ -20,6 +20,11 @@ IMPORTED_AT          TIMESTAMP             Waktu ditulis
 
 Tidak ada secondary index. Primary key sudah menjadi kunci pencarian.
 
+Catatan aktivasi SE11: MENGE bertipe MENGE_D (QUAN), jadi wajib punya
+reference field. Tab "Currency/Quantity Fields", baris MENGE:
+  Reference table: ZCP_SO_IMPORT
+  Ref. field     : MEINS
+
 Catatan: peran tunggal tabel ini adalah mengunci SO item yang sudah pernah
 menjadi DCP. Hanya berisi item yang approved. Item yang ditolak sengaja
 tidak ditulis ke sini supaya bisa diajukan ulang.

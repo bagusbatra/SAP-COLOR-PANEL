@@ -23,6 +23,13 @@ CREATED_AT           TIMESTAMP             Waktu dibuat
 
 Tidak ada secondary index.
 
+Catatan aktivasi SE11: MENGE bertipe MENGE_D (QUAN), jadi wajib punya
+reference field. Tab "Currency/Quantity Fields", baris MENGE:
+  Reference table: ZCP_REQUEST_ITM
+  Ref. field     : MEINS
+Tanpa ini aktivasi gagal dengan "Quantity field MENGE requires a reference
+field". MEINS sendiri bertipe UNIT, tidak butuh referensi ke mana-mana.
+
 Catatan: keputusan Admin dicatat per item, bukan per request. Satu SO bisa
 punya sebagian material approved dan sebagian rejected. Inilah alasan
 ZCP_REQUEST-STATUS dihitung, bukan disimpan sebagai keputusan tersendiri.
