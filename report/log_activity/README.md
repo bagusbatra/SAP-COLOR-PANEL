@@ -1,0 +1,29 @@
+# Log Activity — Indeks Harian
+
+Satu file per tanggal, format nama `YYYY-MM-DD.md` supaya urut sendiri di file explorer maupun di git.
+
+| Tanggal | Hari | Fokus | Task tersentuh |
+|---|---|---|---|
+| [2026-07-29](2026-07-29.md) | Rabu | Sepuluh tabel dan enam index di SE11 | Task 3 Step 5 (sebagian) |
+| [2026-07-28](2026-07-28.md) | Selasa | Inisialisasi repo, file DDIC, domain dan data element | Task 1, Task 2, Task 3 Step 1&ndash;4 |
+
+Checkpoint per task dan per step ada di `../report.md`.
+
+## Format entri harian
+
+Tiap file mengikuti kerangka yang sama supaya gampang dibandingkan antar hari:
+
+```
+# Log Activity — <tanggal> (<hari>)
+
+**Fokus hari ini:**
+**Task tersentuh:**
+
+## Yang dikerjakan
+## Masalah yang muncul dan cara mengatasinya
+## Catatan teknis yang perlu diingat
+## Commit
+## Status akhir hari
+```
+
+Bagian *Masalah* dan *Catatan teknis* boleh dilewat kalau hari itu memang tidak ada. Bagian *Status akhir hari* jangan dilewat &mdash; itu yang dibaca pertama kali saat mulai kerja keesokan harinya.

@@ -5,7 +5,7 @@ Rekaman kemajuan per task dan per step. Diperbarui tiap kali ada step yang seles
 - **Proyek:** Color Panel Management System — SAP S/4HANA 1809, PT. Kayu Mebel Indonesia
 - **Plan sumber:** `docs/superpowers/plans/2026-07-28-color-panel-foundation-dcp.md`
 - **Spec sumber:** `docs/superpowers/specs/2026-07-28-color-panel-foundation-dcp-design.md`
-- **Log harian:** `report/log_activity.md`
+- **Log harian:** `report/log_activity/` &mdash; satu file per tanggal, indeks di `report/log_activity/README.md`
 - **Terakhir diperbarui:** 29 Juli 2026
 
 ## Arti simbol status
