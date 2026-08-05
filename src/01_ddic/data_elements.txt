@@ -1,7 +1,7 @@
 Data Element          Domain / Type      Field Label (Medium)
 --------------------------------------------------------------------
-ZCP_DE_USER_ID        CHAR20             User ID
-ZCP_DE_ROLE           ZCP_DOM_ROLE       Role
+ZCP_DE_USER_ID        CHAR20             User ID               v
+ZCP_DE_ROLE           ZCP_DOM_ROLE       Role                  v
 ZCP_DE_BUYER_ID       CHAR10             Buyer ID
 ZCP_DE_COLOR_CODE     CHAR20             Color Code
 ZCP_DE_REQUEST_ID     CHAR20             Request ID
