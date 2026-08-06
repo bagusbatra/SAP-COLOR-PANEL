@@ -1,0 +1,79 @@
+Page Attributes untuk admin_user.htm
+====================================
+
+PERINGATAN: daftar ini BERBEDA dari main.htm dan noaccess.htm.
+Jangan disalin dari halaman sebelah. Lihat catatan di README.txt.
+
+Prasyarat: tab "Type Definitions" harus sudah diisi lebih dulu dari
+admin_user.types.txt, kalau tidak tt_usermap dan tt_buyer tidak dikenal
+dan aktivasi gagal.
+
+Name          Type Ref    Associated Type      Auto
+--------------------------------------------------------
+gv_user_id    TYPE        ZCP_DE_USER_ID       (kosong)
+gv_user_name  TYPE        STRING               (kosong)
+gv_role       TYPE        STRING               (kosong)
+gv_buyer_id   TYPE        ZCP_DE_BUYER_ID      (kosong)
+gv_as_sales   TYPE        CHAR1                (kosong)
+gv_as_admin   TYPE        CHAR1                (kosong)
+gv_as_qc      TYPE        CHAR1                (kosong)
+gv_as_it      TYPE        CHAR1                (kosong)
+gv_error      TYPE        STRING               (kosong)
+gv_info       TYPE        STRING               (kosong)
+gt_users      TYPE        TT_USERMAP           (kosong)
+gt_buyers     TYPE        TT_BUYER             (kosong)
+
+
+Keterangan
+----------
+
+Empat atribut pertama adalah kontrak baku yang dipakai potongan
+_shared/role_detect.abap. Sama seperti main.htm.
+
+gv_error   Pesan merah. Diisi saat penyimpanan ditolak.
+gv_info    Pesan biru. Diisi saat penyimpanan berhasil.
+
+gt_users   Daftar SAP user yang punya minimal satu role ZCP_, lengkap
+           dengan role efektif dan pemetaan buyer-nya. Diisi di
+           OnInitialization.
+
+gt_buyers  Isi dropdown Buyer. Hanya buyer ber-IS_ACTIVE = X.
+
+
+Kenapa OnInitialization, bukan OnRequest
+----------------------------------------
+
+Urutan event di BSP flow logic:
+
+    OnRequest -> OnInputProcessing -> OnInitialization -> Layout
+
+Halaman ini punya form penyimpanan. Kalau gt_users diisi di OnRequest,
+pengisian itu terjadi SEBELUM OnInputProcessing menyimpan perubahan --
+sehingga tabel yang tampil di layar masih memuat data lama, dan user
+menyimpulkan penyimpanannya gagal padahal berhasil.
+
+Karena itu seluruh pemuatan data halaman ini ada di OnInitialization,
+termasuk deteksi role. Tab OnRequest dibiarkan KOSONG.
+
+main.htm dan noaccess.htm tidak punya form, jadi tidak terkena masalah
+ini dan boleh tetap memakai OnRequest.
+
+
+Empat flag kapabilitas (gv_as_*)
+--------------------------------
+
+Menjawab "boleh apa", terpisah dari gv_role yang menjawab "dia siapa".
+Layout dan penjagaan memeriksa flag ini, BUKAN gv_role.
+
+  gv_as_sales   boleh membuat request
+  gv_as_admin   boleh menjalankan siklus panel DCP dan MCP
+  gv_as_qc      boleh approve/reject panel
+  gv_as_it      boleh master user dan audit log
+
+Pemisahan ini dibuat supaya pemetaan kewenangan bisa diubah di satu
+tempat saja, yaitu blok kapabilitas di _shared/role_detect.abap.
+
+SEMENTARA (6 Agustus 2026): pemegang ZCP_IT mendapat keempat flag
+sekaligus, supaya seluruh alur bisnis bisa diuji tanpa menunggu akun
+role lain. Harus dicabut sebelum go-live -- lihat
+docs/superpowers/specs/2026-08-06-role-capability-map.md bagian 8.

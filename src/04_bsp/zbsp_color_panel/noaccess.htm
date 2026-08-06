@@ -1,0 +1,45 @@
+<%@page language="abap"%>
+<html>
+<head>
+<title>Akses Ditolak &mdash; Color Panel</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<script>
+tailwind.config = { theme: { extend: { colors: {
+  navy: '#1E3A8A', navydark: '#1E293B', navylight: '#3B4E9E' } } } }
+</script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center">
+
+<div class="bg-white rounded-xl shadow-lg w-full max-w-md p-8">
+
+  <div class="text-center mb-6">
+    <div class="w-14 h-14 bg-amber-100 rounded-xl mx-auto flex items-center justify-center mb-3">
+      <i class="fa-solid fa-lock text-amber-700 text-2xl"></i>
+    </div>
+    <div class="text-xl font-bold text-slate-800">Belum Bisa Masuk</div>
+    <div class="text-xs text-slate-500">Color Panel &mdash; PT. Kayu Mebel Indonesia</div>
+  </div>
+
+  <div class="px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-900 mb-5">
+    <%= gv_reason %>
+  </div>
+
+  <div class="border-t border-slate-200 pt-4">
+    <div class="text-xs text-slate-500 mb-1">Anda masuk sebagai</div>
+    <div class="text-sm font-semibold text-slate-800"><%= gv_user_name %></div>
+    <div class="text-xs text-slate-500 font-mono"><%= gv_user_id %></div>
+  </div>
+
+  <div class="mt-5 text-xs text-slate-500">
+    Sebutkan User ID di atas saat menghubungi IT atau Basis &mdash;
+    itu yang mereka butuhkan untuk menemukan akun Anda.
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,68 @@
+Page Attributes untuk main.htm
+==============================
+
+REVISI 6 Agustus 2026 -- autentikasi pindah ke SAP standar.
+
+Keempat atribut di bawah adalah kontrak baku yang dipakai potongan
+_shared/role_detect.abap.txt. Setiap halaman selain noaccess.htm wajib
+punya keempatnya dengan nama dan tipe persis seperti ini, kalau tidak
+potongan deteksi role tidak akan bisa dipaste apa adanya.
+
+Name          Type Ref    Associated Type      Auto
+--------------------------------------------------------
+gv_user_id    TYPE        ZCP_DE_USER_ID       (kosong)
+gv_user_name  TYPE        STRING               (kosong)
+gv_role       TYPE        STRING               (kosong)
+gv_buyer_id   TYPE        ZCP_DE_BUYER_ID      (kosong)
+gv_as_sales   TYPE        CHAR1                (kosong)
+gv_as_admin   TYPE        CHAR1                (kosong)
+gv_as_qc      TYPE        CHAR1                (kosong)
+gv_as_it      TYPE        CHAR1                (kosong)
+
+
+Keterangan
+----------
+
+gv_user_id    SY-UNAME. Sejak autentikasi pindah ke SAP standar, ini
+              adalah identitas pelaku yang sah dan dipakai mengisi
+              CREATED_BY, CHANGED_BY, dan ACTION_BY di audit log.
+
+gv_user_name  Nama tampilan. Diambil dari ZCP_USER-FULL_NAME bila ada,
+              kalau tidak dari master alamat SAP (USR21 + ADRP).
+
+gv_role       Salah satu dari ADMIN, IT, QC, SALES. Hasil pemetaan role
+              PFCG dengan prioritas ADMIN > IT > QC > SALES.
+
+gv_buyer_id   Hanya terisi untuk role SALES. Dibaca dari ZCP_USER.
+
+
+Atribut yang DITAMBAHKAN NANTI di Task 15 Step 3
+-------------------------------------------------
+
+Jangan dibuat sekarang. Dicatat di sini supaya saat Task 15 tiba tidak
+perlu menebak namanya.
+
+gv_stat_req    TYPE  I    Jumlah request berstatus P
+gv_stat_dcp    TYPE  I    Jumlah DCP header berstatus O
+gv_stat_panel  TYPE  I    Jumlah panel DCP berstatus SB
+gv_stat_exp    TYPE  I    Jumlah DCP header O yang sudah lewat expire_date
+
+
+Empat flag kapabilitas (gv_as_*)
+--------------------------------
+
+Menjawab "boleh apa", terpisah dari gv_role yang menjawab "dia siapa".
+Layout dan penjagaan memeriksa flag ini, BUKAN gv_role.
+
+  gv_as_sales   boleh membuat request
+  gv_as_admin   boleh menjalankan siklus panel DCP dan MCP
+  gv_as_qc      boleh approve/reject panel
+  gv_as_it      boleh master user dan audit log
+
+Pemisahan ini dibuat supaya pemetaan kewenangan bisa diubah di satu
+tempat saja, yaitu blok kapabilitas di _shared/role_detect.abap.
+
+SEMENTARA (6 Agustus 2026): pemegang ZCP_IT mendapat keempat flag
+sekaligus, supaya seluruh alur bisnis bisa diuji tanpa menunggu akun
+role lain. Harus dicabut sebelum go-live -- lihat
+docs/superpowers/specs/2026-08-06-role-capability-map.md bagian 8.

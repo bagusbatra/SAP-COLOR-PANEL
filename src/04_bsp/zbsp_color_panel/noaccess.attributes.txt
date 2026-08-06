@@ -1,0 +1,31 @@
+Page Attributes untuk noaccess.htm
+==================================
+
+Halaman ini menggantikan login.htm yang dibatalkan pada revisi
+6 Agustus 2026. Dengan autentikasi SAP standar, aplikasi tidak
+pernah meminta kredensial -- SICF yang mengerjakannya sebelum
+halaman mana pun dijalankan.
+
+Yang tersisa untuk ditangani aplikasi hanya satu keadaan: user
+berhasil masuk SAP tapi belum punya role ZCP_ apa pun, atau
+barisnya di ZCP_USER tidak aktif, atau dia Sales tanpa BUYER_ID.
+Ketiganya berujung ke halaman ini.
+
+Name          Type Ref    Associated Type      Auto
+--------------------------------------------------------
+gv_user_id    TYPE        ZCP_DE_USER_ID       (kosong)
+gv_user_name  TYPE        STRING               (kosong)
+gv_reason     TYPE        STRING               (kosong)
+
+
+Keterangan
+----------
+
+gv_user_id    Diisi SY-UNAME di OnRequest, ditampilkan supaya user
+              bisa menyebutkannya saat menghubungi IT.
+
+gv_user_name  Nama dari master alamat SAP, sekadar supaya halaman
+              tidak terasa seperti pesan error mesin.
+
+gv_reason     Sebab penolakan dalam kalimat yang bisa ditindaklanjuti.
+              Tiga kemungkinan isinya ada di onrequest.abap.txt.

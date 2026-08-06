@@ -1,0 +1,95 @@
+PFCG ROLE untuk Color Panel
+===========================
+
+Menggantikan keputusan desain nomor 2 di spec 28 Juli. Autentikasi
+tidak lagi memakai form login sendiri dengan password SHA256 di
+ZCP_USER, melainkan autentikasi SAP standar. Role Color Panel dibaca
+dari role PFCG yang melekat pada SAP user.
+
+Konsekuensi yang harus disadari:
+
+  1. Setiap pemakai Color Panel wajib punya SAP dialog user. Ini biaya
+     lisensi per orang. Alasan asli memilih login sendiri adalah
+     supaya user pabrik tidak perlu SAP account; keputusan itu
+     dibalik secara sadar pada 6 Agustus 2026.
+
+  2. Aturan wajib nomor 5 di spec ("Tidak ada SY-UNAME sebagai
+     identitas pelaku") GUGUR. Dengan autentikasi SAP standar,
+     SY-UNAME adalah pelaku sebenarnya dan justru menjadi satu-satunya
+     identitas yang sah.
+
+  3. SICF tidak lagi memakai shared user auto_email.
+
+
+Empat role yang harus dibuat Basis
+----------------------------------
+
+Transaksi PFCG. Semuanya single role, tanpa authorization object
+tambahan -- role di sini dipakai murni sebagai penanda keanggotaan,
+bukan pembawa otorisasi.
+
+  Role            Deskripsi                          Untuk
+  --------------------------------------------------------------------
+  ZCP_SALES       Color Panel - Sales                Sales per buyer
+  ZCP_ADMIN       Color Panel - Admin                Admin R&D
+  ZCP_QC          Color Panel - Quality Control      QC
+  ZCP_IT          Color Panel - IT Support           IT
+
+Prefix ZCP_ wajib. Program menyaring dengan AGR_NAME LIKE 'ZCP_%',
+jadi role di luar prefix ini tidak akan terbaca.
+
+Langkah di PFCG untuk tiap role:
+
+  PFCG -> ketik nama role -> Single Role -> isi Description -> Save.
+  Tab Authorizations tidak perlu diisi. Tab User dipakai untuk
+  menugaskan SAP user ke role tersebut.
+
+Setelah menugaskan user, jalankan User Comparison (tombol di tab User)
+supaya baris di AGR_USERS benar-benar terbentuk. Tanpa itu penugasan
+tampak ada di layar tapi tidak terbaca program.
+
+
+Cara program membaca role
+-------------------------
+
+SELECT agr_name INTO TABLE lt_agr
+  FROM agr_users
+  WHERE uname     = sy-uname
+    AND agr_name  LIKE 'ZCP_%'
+    AND from_dat <= sy-datum
+    AND to_dat   >= sy-datum.
+
+Penyaringan tanggal wajib. AGR_USERS menyimpan penugasan yang sudah
+kedaluwarsa maupun yang belum berlaku; tanpa penyaringan itu, user
+yang aksesnya sudah dicabut masih akan terbaca punya role.
+
+
+Prioritas bila satu user punya lebih dari satu role
+---------------------------------------------------
+
+ZCP_USER mencatat "satu user satu role", tapi PFCG tidak mencegah
+seseorang ditugaskan ke beberapa role sekaligus. Urutan berikut
+dipakai untuk menentukan role efektif, disamakan dengan ROLE_PRIORITY
+di prototype (prototype/assets/js/config.js baris 52):
+
+  1. ADMIN
+  2. IT
+  3. QC
+  4. SALES
+
+Contoh: user dengan ZCP_ADMIN dan ZCP_QC diperlakukan sebagai ADMIN.
+
+
+User tanpa role ZCP_ sama sekali
+--------------------------------
+
+Diarahkan ke noaccess.htm, bukan dibiarkan masuk dengan role kosong.
+Halaman itu menjelaskan apa yang harus diminta ke IT.
+
+
+BUYER_ID
+--------
+
+PFCG role tidak membawa data seperti buyer. Role SALES tetap perlu
+tahu dia milik buyer mana, dan itu dibaca dari ZCP_USER-BUYER_ID
+dengan key SY-UNAME. Lihat src/01_ddic/tables/zcp_user.txt.

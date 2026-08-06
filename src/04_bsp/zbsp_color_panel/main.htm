@@ -1,0 +1,150 @@
+<%@page language="abap"%>
+<html>
+<head>
+<title>Dashboard &mdash; Color Panel</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<script>
+tailwind.config = { theme: { extend: { colors: {
+  navy: '#1E3A8A', navydark: '#1E293B', navylight: '#3B4E9E' } } } }
+</script>
+</head>
+<body class="bg-slate-100">
+<div class="flex">
+
+<aside class="w-64 bg-navydark text-white flex flex-col min-h-screen">
+  <div class="px-5 py-5 border-b border-white border-opacity-10">
+    <div class="text-lg font-bold">Color Panel</div>
+    <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
+  </div>
+  <nav class="flex-1 py-3">
+
+    <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white">
+      <i class="fa-solid fa-gauge w-4"></i> Dashboard
+    </a>
+
+    <% IF gv_as_sales = 'X' OR gv_as_admin = 'X'. %>
+    <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
+    </a>
+    <% ENDIF. %>
+
+    <% IF gv_as_admin = 'X' OR gv_as_qc = 'X'. %>
+    <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-flask w-4"></i> DCP
+    </a>
+    <% ENDIF. %>
+
+    <% IF gv_as_it = 'X'. %>
+    <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-users w-4"></i> User
+    </a>
+    <% ENDIF. %>
+
+  </nav>
+  <div class="px-5 py-4 border-t border-white border-opacity-10">
+    <div class="text-sm font-semibold text-white"><%= gv_user_name %></div>
+    <div class="text-xs text-gray-400"><%= gv_user_id %> &middot; <%= gv_role %></div>
+  </div>
+</aside>
+
+<main class="flex-1">
+
+  <div class="bg-white border-b border-slate-200 px-8 py-5">
+    <h1 class="text-2xl font-bold text-slate-800">Dashboard</h1>
+    <p class="text-sm text-slate-500">Ringkasan Color Panel</p>
+  </div>
+
+  <div class="p-8">
+
+    <div class="grid grid-cols-4 gap-5 mb-6">
+
+      <div class="bg-white rounded-xl p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center">
+            <i class="fa-solid fa-envelope-open-text text-amber-700"></i>
+          </div>
+          <div class="text-2xl font-bold text-slate-800">0</div>
+        </div>
+        <div class="text-xs text-slate-500">Request Pending</div>
+      </div>
+
+      <div class="bg-white rounded-xl p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+            <i class="fa-solid fa-flask text-blue-700"></i>
+          </div>
+          <div class="text-2xl font-bold text-slate-800">0</div>
+        </div>
+        <div class="text-xs text-slate-500">DCP Open</div>
+      </div>
+
+      <div class="bg-white rounded-xl p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+            <i class="fa-solid fa-clipboard-check text-emerald-700"></i>
+          </div>
+          <div class="text-2xl font-bold text-slate-800">0</div>
+        </div>
+        <div class="text-xs text-slate-500">Panel Submitted</div>
+      </div>
+
+      <div class="bg-white rounded-xl p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center">
+            <i class="fa-solid fa-clock text-red-700"></i>
+          </div>
+          <div class="text-2xl font-bold text-slate-800">0</div>
+        </div>
+        <div class="text-xs text-slate-500">DCP Expired</div>
+      </div>
+
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
+      <h2 class="font-bold text-slate-800 mb-3">Pintasan</h2>
+      <div class="flex gap-3 flex-wrap">
+
+        <% IF gv_as_sales = 'X' OR gv_as_admin = 'X'. %>
+        <a href="req_list.htm" class="bg-navy hover:bg-navylight text-white px-4 py-2 rounded-lg text-sm font-medium">
+          <i class="fa-solid fa-envelope-open-text"></i> Request DCP
+        </a>
+        <% ENDIF. %>
+
+        <% IF gv_as_admin = 'X' OR gv_as_qc = 'X'. %>
+        <a href="dcp_list.htm" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium">
+          <i class="fa-solid fa-flask"></i> Daftar DCP
+        </a>
+        <% ENDIF. %>
+
+        <% IF gv_as_it = 'X'. %>
+        <a href="admin_user.htm" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium">
+          <i class="fa-solid fa-users"></i> Master User
+        </a>
+        <% ENDIF. %>
+
+      </div>
+    </div>
+
+    <% IF gv_as_sales = 'X' AND gv_role = 'SALES'. %>
+    <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
+      <div class="text-xs text-slate-500">Buyer Anda</div>
+      <div class="text-sm font-semibold text-slate-800 font-mono"><%= gv_buyer_id %></div>
+    </div>
+    <% ENDIF. %>
+
+    <p class="text-sm text-slate-500">
+      Keempat angka di atas masih hardcode nol. Task 15 menggantinya dengan
+      hasil SELECT COUNT di OnRequest. Menu dan pintasan sudah tersaring
+      role sungguhan sejak sekarang.
+    </p>
+
+  </div>
+</main>
+
+</div>
+</body>
+</html>

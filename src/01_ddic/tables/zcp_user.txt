@@ -1,32 +1,73 @@
 TABLE ZCP_USER
-Short Description: Color Panel - User dan Role
+Short Description: Color Panel - Pemetaan SAP User ke Buyer
 Delivery Class: A
 Data Class: APPL1   Size Category: 1
 Table View Maintenance: Display/Maintenance Allowed
 
+REVISI 6 Agustus 2026 -- autentikasi pindah ke SAP standar.
+Lihat src/01_ddic/pfcg_roles.txt untuk keputusan lengkapnya.
+
 Field           Key  Data Element / Type   Keterangan
 --------------------------------------------------------------------
 MANDT           X    MANDT                 Client
-USER_ID         X    ZCP_DE_USER_ID        ID login
-FULL_NAME            CHAR60                Nama lengkap
-PASSWORD_HASH        ZCP_DE_HASH           SHA256, disimpan sebagai string
-ROLE                 ZCP_DE_ROLE           SALES / ADMIN / IT
+USER_ID         X    ZCP_DE_USER_ID        SAP user, sama dengan SY-UNAME
+FULL_NAME            CHAR60                Nama lengkap, snapshot
 BUYER_ID             ZCP_DE_BUYER_ID       Diisi khusus role SALES
 EMAIL                CHAR100               Alamat surel
 PHONE                CHAR20                Nomor telepon
 IS_ACTIVE            CHAR1                 X = aktif
-LAST_LOGIN           TIMESTAMP             Waktu login terakhir
-CREATED_BY           ZCP_DE_USER_ID        USER_ID, bukan SY-UNAME
+LAST_LOGIN           TIMESTAMP             Waktu akses terakhir
+CREATED_BY           ZCP_DE_USER_ID        SY-UNAME pembuat
 CREATED_AT           TIMESTAMP             Waktu dibuat
-CHANGED_BY           ZCP_DE_USER_ID        USER_ID
+CHANGED_BY           ZCP_DE_USER_ID        SY-UNAME pengubah
 CHANGED_AT           TIMESTAMP             Waktu ubah
 
 Tidak ada secondary index.
 
-Catatan: satu user satu role. Multi-role tidak didukung di sub-proyek 1.
-Kalau nanti dibutuhkan, ditambahkan tabel penghubung, bukan string
-comma-separated di kolom ROLE.
 
-Catatan: baris pertama tidak bisa dibuat lewat SM30 karena password harus
-di-hash lebih dulu. User perdana dibuat lewat report sementara yang memanggil
-ZCL_CP_AUTH=>hash_password. Lihat Task 6 Step 5.
+Dua kolom yang DIBUANG pada revisi ini
+--------------------------------------
+
+PASSWORD_HASH   Tidak ada lagi password yang dikelola aplikasi.
+                Autentikasi sepenuhnya dikerjakan SAP lewat SICF.
+
+ROLE            Role sekarang dibaca dari AGR_USERS, bukan disimpan
+                di sini. Menyimpannya di dua tempat menjamin keduanya
+                lambat laun berbeda isi, dan yang salah akan tetap
+                dipercaya karena kelihatan lebih dekat.
+
+
+Kenapa tabel ini masih ada
+--------------------------
+
+Satu-satunya alasan: BUYER_ID. Role PFCG tidak bisa membawa data
+seperti "Sales ini milik buyer mana", padahal req_list.htm harus
+menyaring request berdasarkan buyer milik Sales yang sedang login.
+
+Baris di sini bersifat pelengkap, bukan penentu akses. User yang punya
+role ZCP_ADMIN tetap bisa memakai aplikasi walau tidak punya baris di
+ZCP_USER -- yang hilang hanya BUYER_ID, dan Admin memang tidak
+memerlukannya. Sebaliknya, baris di sini tanpa role ZCP_ di PFCG tidak
+memberi akses apa pun.
+
+IS_ACTIVE dipertahankan sebagai rem cepat: mencabut akses satu Sales
+tanpa harus menunggu Basis mengubah penugasan role.
+
+
+Langkah mengubah tabel yang sudah Active di SE11
+------------------------------------------------
+
+Tabel ini sudah aktif sejak 29 Juli dan mungkin sudah berisi baris uji.
+
+  1. SE11 -> ZCP_USER -> Change
+  2. Hapus baris PASSWORD_HASH dan ROLE
+  3. Aktifkan. SAP meminta konfirmasi konversi karena ada kolom hilang.
+  4. Bila muncul dialog Adjust and Activate, pilih itu. Data pada kolom
+     yang dibuang hilang permanen -- pastikan tidak ada yang masih
+     dibutuhkan.
+  5. SE14 dipakai hanya bila aktivasi gagal dan tabel tertinggal dalam
+     status inkonsisten.
+
+Data element ZCP_DE_HASH menjadi tidak terpakai setelah ini. Jangan
+dihapus dulu: biarkan sampai sub-proyek 1 selesai, supaya tidak perlu
+dibuat ulang kalau ternyata masih ada yang memakainya.

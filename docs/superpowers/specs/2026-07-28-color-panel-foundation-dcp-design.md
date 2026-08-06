@@ -545,3 +545,24 @@ Diadopsi dari pengalaman ECM BSP di sistem yang sama:
 | 2 | Setup DOKAR `ZDCP` / `ZMCP` di DC10 dan Content Server | Menghambat sub-proyek 4 |
 | 3 | Work Center: pakai standar SAP (CRHD) atau `ZCP_WC` custom? | Menghambat sub-proyek 3 |
 | 4 | Apakah SO color panel punya penanda khusus (jenis dokumen, divisi, atau kelompok material) agar `ZCL_CP_SO_READER` bisa menolak SO non-color-panel? | Memperbaiki pesan error no.1 di bagian 6; sub-proyek 1 tetap jalan tanpa ini |
+
+---
+
+## REVISI 6 Agustus 2026 &mdash; Autentikasi Pindah ke SAP Standar
+
+Keputusan desain nomor 2 dan aturan wajib nomor 5 di dokumen ini **dibatalkan**. Rincian lengkap ada di `src/01_ddic/pfcg_roles.txt`.
+
+| Bagian | Semula | Menjadi |
+|---|---|---|
+| Keputusan 2 | Custom login Z-table, password SHA256, SICF pakai `auto_email` | Autentikasi SAP standar. Tidak ada form login, tidak ada password yang dikelola aplikasi |
+| Sumber role | Kolom `ROLE` di `ZCP_USER` | Role PFCG `ZCP_SALES` / `ZCP_ADMIN` / `ZCP_QC` / `ZCP_IT`, dibaca dari `AGR_USERS` |
+| Aturan wajib 5 | "Tidak ada `SY-UNAME` sebagai identitas pelaku" | **Gugur.** `SY-UNAME` justru satu-satunya identitas yang sah |
+| `ZCP_USER` | Menyimpan user, password, dan role | Hanya pemetaan SAP user ke `BUYER_ID`. Kolom `PASSWORD_HASH` dan `ROLE` dibuang |
+| `login.htm` | Form login | **Dihapus.** Diganti `noaccess.htm` untuk user yang belum punya role |
+| `ZCL_CP_AUTH` | Login, hash, session cookie | Resolusi role dan buyer dari SY-UNAME |
+
+**Harga yang dibayar, disadari saat memutuskan:** setiap pemakai Color Panel &mdash; termasuk operator QC di lantai produksi &mdash; wajib punya SAP dialog user, dengan biaya lisensi per orang. Alasan asli memilih login sendiri persis untuk menghindari itu.
+
+**Yang didapat:** role tidak lagi dikelola dua kali, pencabutan akses cukup lewat PFCG, dan tidak ada password aplikasi yang perlu diamankan. Deteksi role juga hanya butuh satu `SELECT`, sehingga navigasi berbasis role sudah nyata sejak tahap skeleton tanpa satu class pun.
+
+Bagian 4.2, 4.3, dan 8 di atas masih menyebut `login.htm`. Baca sebagai `noaccess.htm` dengan alur masuk langsung ke `main.htm`.

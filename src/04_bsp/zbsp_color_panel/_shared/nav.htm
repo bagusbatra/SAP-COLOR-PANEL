@@ -1,17 +1,16 @@
 Potongan SIDEBAR bersama untuk aplikasi BSP ZBSP_COLOR_PANEL
 ============================================================
 
-Disalin ke setiap halaman kecuali login.htm, tepat di dalam
+REVISI 6 Agustus 2026 -- autentikasi pindah ke SAP standar.
+
+Disalin ke setiap halaman kecuali noaccess.htm, tepat di dalam
 <div class="flex"> sebagai anak pertama.
 
-TAHAP 1: seluruh menu ditampilkan tanpa penyaringan role.
-Penyembunyian per role masuk di Task 15, dengan bentuk:
+Penyaringan role sudah AKTIF sejak Tahap 1. Ini bisa dilakukan karena
+deteksi role hanya butuh SELECT atas AGR_USERS, tidak butuh class apa
+pun. Lihat _shared/role_detect.abap.txt.
 
-  <% IF gv_role CS 'ADMIN' OR gv_role CS 'IT'. %>
-    ... satu blok <a> ...
-  <% ENDIF. %>
-
-Peta role per menu untuk Task 15:
+Peta role per menu:
   Dashboard    : semua role
   Request DCP  : SALES, ADMIN, IT
   DCP          : ADMIN, QC, IT
@@ -21,6 +20,11 @@ MENANDAI MENU AKTIF: pada halaman yang bersangkutan, ganti kelas
   class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white"
 menjadi
   class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white"
+
+TIDAK ADA TOMBOL LOGOUT. Dengan autentikasi SAP standar, sesi dipegang
+browser lewat HTTP authentication -- tombol logout di halaman tidak
+bisa mencabutnya, dan menampilkannya hanya menjanjikan sesuatu yang
+tidak terjadi. Footer diisi identitas user sebagai gantinya.
 
 ATURAN: nol karakter non-ASCII. Atribut class dalam string JavaScript
 harus satu baris, jangan dipecah antar baris.
@@ -33,23 +37,33 @@ harus satu baris, jangan dipecah antar baris.
     <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
   </div>
   <nav class="flex-1 py-3">
+
     <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-gauge w-4"></i> Dashboard
     </a>
+
+    <% IF gv_as_sales = 'X' OR gv_as_admin = 'X'. %>
     <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_as_admin = 'X' OR gv_as_qc = 'X'. %>
     <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-flask w-4"></i> DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_as_it = 'X'. %>
     <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-users w-4"></i> User
     </a>
+    <% ENDIF. %>
+
   </nav>
   <div class="px-5 py-4 border-t border-white border-opacity-10">
-    <a href="login.htm" class="block text-center text-sm text-gray-300 hover:text-white">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </a>
+    <div class="text-sm font-semibold text-white"><%= gv_user_name %></div>
+    <div class="text-xs text-gray-400"><%= gv_user_id %> &middot; <%= gv_role %></div>
   </div>
 </aside>
 

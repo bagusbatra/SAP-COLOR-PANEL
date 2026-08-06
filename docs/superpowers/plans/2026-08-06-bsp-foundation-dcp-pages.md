@@ -18,7 +18,7 @@ Lima aturan berikut berlaku di **setiap** task. Disalin apa adanya dari `docs/su
 2. **OpenSQL gaya lama tanpa `@`.** `SELECT f1 f2 INTO TABLE lt_data FROM ztab WHERE f = lv_var.` Tidak ada inline `DATA(...)`, tidak ada `VALUE #( )`. Semua variabel dideklarasikan eksplisit.
 3. **Semua halaman stateful.** Centang di tab Properties tiap halaman.
 4. **Atribut `class` dalam string JavaScript harus satu baris**, jangan dipecah antar baris.
-5. **Tidak ada `SY-UNAME` sebagai identitas pelaku.** Selalu `USER_ID` dari session.
+5. **`SY-UNAME` ADALAH identitas pelaku.** Direvisi 6 Agustus 2026 &mdash; aturan lama ("jangan pakai `SY-UNAME`") berlaku hanya selama SICF memakai shared user `auto_email`. Dengan autentikasi SAP standar, `SY-UNAME` berisi pelaku sebenarnya dan dipakai mengisi `CREATED_BY`, `CHANGED_BY`, dan `ACTION_BY`. Lihat `src/01_ddic/pfcg_roles.txt`.
 
 Tambahan yang berlaku sepanjang plan ini:
 
@@ -56,7 +56,7 @@ src/04_bsp/zbsp_color_panel/
   _shared/
     head.htm.txt            Potongan <head> yang di-copy ke semua halaman
     nav.htm.txt             Potongan sidebar, di-copy ke halaman selain login
-  login/                    Form login
+  noaccess/                 Penolakan user tanpa role ZCP_
   main/                     Router berbasis role
   req_list/                 Daftar request (Sales: miliknya; Admin: inbox pending)
   req_form/                 Input SO, pilih material, submit request
@@ -95,6 +95,8 @@ Tahap 2 sengaja tidak mengulang isi `docs/superpowers/plans/2026-07-28-color-pan
 
 # TAHAP 1 &mdash; Skeleton yang Bisa Di-Activate
 
+**Wajib untuk setiap halaman di Task 3&ndash;6:** empat atribut baku `gv_user_id`, `gv_user_name`, `gv_role`, dan `gv_buyer_id` harus ada di tab Page Attributes, dan isi `_shared/role_detect.abap.txt` harus dipaste ke `OnRequest`. Tanpa keduanya, sidebar tidak akan menampilkan menu apa pun &mdash; `gv_role` kosong membuat seluruh blok `IF` bernilai salah, dan halaman terlihat seperti kehilangan navigasi padahal yang hilang adalah identitasnya.
+
 Tujuan tahap ini satu: **hari ini juga ada delapan halaman yang bisa dibuka di browser.** Semua data dituliskan langsung di layout. Tidak ada `SELECT`, tidak ada panggilan class, tidak ada session.
 
 Data hardcode di tahap ini bukan sampah yang akan dibuang percuma &mdash; ia mengunci struktur HTML dan nama field form, sehingga Tahap 3 tinggal mengganti sumber datanya tanpa menyentuh markup.
@@ -119,26 +121,25 @@ Short description: `Color Panel Management System`. Package: `$TMP`. Simpan.
 
 Expected: node `ZBSP_COLOR_PANEL` muncul di object tree kiri, dengan sub-node Pages, Controllers, Views, Navigation, MIME Repository.
 
-- [ ] **Step 2: Aktifkan service SICF**
+- [ ] **Step 2: Aktifkan service SICF dengan autentikasi SAP standar**
+
+REVISI 6 Agustus 2026. Rancangan semula memakai shared user `auto_email` dengan Alternative Logon Procedure. Itu **dibatalkan** &mdash; lihat `src/01_ddic/pfcg_roles.txt`.
 
 SICF &rarr; Hierarchy Type `SERVICE` &rarr; Execute &rarr; telusuri `default_host` &rarr; `sap` &rarr; `bc` &rarr; `bsp` &rarr; `sap` &rarr; `zbsp_color_panel`.
 
 Klik kanan &rarr; **Activate Service**.
 
-Lalu klik kanan &rarr; Change &rarr; tab **Logon Data**:
+Tab **Logon Data** dibiarkan **kosong**. Jangan isi user, jangan pilih Alternative Logon Procedure. Dengan begitu SAP meminta kredensial sendiri, dan `SY-UNAME` di dalam halaman berisi pelaku sebenarnya.
 
-```
-Procedure          : Alternative Logon Procedure
-Client             : <client sistem Anda>
-User               : auto_email
-Password           : <password user auto_email>
-```
+Expected: membuka URL aplikasi memunculkan dialog login SAP. Setelah login, halaman terbuka dan `SY-UNAME` sama dengan user yang barusan dipakai.
 
-Simpan.
+- [ ] **Step 2b: Minta Basis membuat empat role PFCG**
 
-Expected: service tampil hitam (aktif), bukan abu-abu.
+`ZCP_SALES`, `ZCP_ADMIN`, `ZCP_QC`, `ZCP_IT`. Single role, tab Authorizations tidak perlu diisi &mdash; role di sini dipakai sebagai penanda keanggotaan, bukan pembawa otorisasi. Langkah lengkap di `src/01_ddic/pfcg_roles.txt`.
 
-Kalau user `auto_email` belum ada di sistem, buat lewat SU01 sebagai tipe **Service** (bukan Dialog), tanpa profil apa pun. Fungsinya hanya melewati dialog login SAP &mdash; autentikasi sebenarnya dikerjakan `login.htm` terhadap `ZCP_USER`.
+Setelah menugaskan user ke role, **wajib jalankan User Comparison** di tab User. Tanpa itu barisnya tidak terbentuk di `AGR_USERS` dan program tidak akan melihat penugasan tersebut, walau di layar PFCG tampak sudah ada.
+
+Expected: `SE16N` atas `AGR_USERS` dengan `UNAME` = user Anda menampilkan minimal satu baris ber-`AGR_NAME` awalan `ZCP_`.
 
 - [ ] **Step 3: Tulis potongan head bersama**
 
@@ -178,23 +179,33 @@ Tiga warna itu disalin dari design token prototype (`prototype/assets/css/style.
     <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
   </div>
   <nav class="flex-1 py-3">
+
     <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-gauge w-4"></i> Dashboard
     </a>
+
+    <% IF gv_role = 'SALES' OR gv_role = 'ADMIN' OR gv_role = 'IT'. %>
     <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'ADMIN' OR gv_role = 'QC' OR gv_role = 'IT'. %>
     <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-flask w-4"></i> DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'IT'. %>
     <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-users w-4"></i> User
     </a>
+    <% ENDIF. %>
+
   </nav>
   <div class="px-5 py-4 border-t border-white border-opacity-10">
-    <a href="login.htm" class="block text-center text-sm text-gray-300 hover:text-white">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </a>
+    <div class="text-sm font-semibold text-white"><%= gv_user_name %></div>
+    <div class="text-xs text-gray-400"><%= gv_user_id %> &middot; <%= gv_role %></div>
   </div>
 </aside>
 ```
@@ -210,255 +221,102 @@ git commit -m "feat(bsp): aplikasi ZBSP_COLOR_PANEL, service SICF, dan potongan 
 
 ---
 
-### Task 2: Halaman Login dan Router (Skeleton)
+### Task 2: Halaman Dashboard dan Penolakan Akses
 
 **Files:**
-- Create: `src/04_bsp/zbsp_color_panel/login/attributes.txt`
-- Create: `src/04_bsp/zbsp_color_panel/login/layout.htm.txt`
-- Create: `src/04_bsp/zbsp_color_panel/login/oninputprocessing.abap.txt`
+- Create: `src/04_bsp/zbsp_color_panel/_shared/role_detect.abap.txt`
+- Create: `src/04_bsp/zbsp_color_panel/noaccess/attributes.txt`
+- Create: `src/04_bsp/zbsp_color_panel/noaccess/layout.htm.txt`
+- Create: `src/04_bsp/zbsp_color_panel/noaccess/onrequest.abap.txt`
 - Create: `src/04_bsp/zbsp_color_panel/main/attributes.txt`
 - Create: `src/04_bsp/zbsp_color_panel/main/layout.htm.txt`
+- Create: `src/04_bsp/zbsp_color_panel/main/onrequest.abap.txt`
 
 **Interfaces:**
-- Consumes: `_shared/head.htm.txt` dan `_shared/nav.htm.txt` dari Task 1
-- Produces: halaman `login.htm` dan `main.htm`; pola atribut `gv_error` dan pola `navigation->goto_page( )` yang dipakai Task 3&ndash;6
+- Consumes: empat role PFCG dari Task 1 Step 2b; tabel `ZCP_USER` hasil revisi
+- Produces: halaman `main.htm` dan `noaccess.htm`; kontrak empat atribut baku `gv_user_id`, `gv_user_name`, `gv_role`, `gv_buyer_id` yang wajib ada di setiap halaman Task 3&ndash;6; potongan `role_detect.abap.txt` yang disalin ke `OnRequest` semua halaman
 
-- [ ] **Step 1: Tulis Page Attributes login**
+REVISI 6 Agustus 2026. Task ini semula membuat `login.htm` berisi form kredensial. Dengan autentikasi SAP standar, halaman itu tidak punya pekerjaan lagi dan **dihapus**. Yang tersisa untuk ditangani aplikasi hanya satu keadaan: user berhasil masuk SAP tapi belum berhak memakai Color Panel.
 
-`src/04_bsp/zbsp_color_panel/login/attributes.txt`:
+Efek samping yang menguntungkan: deteksi role hanya butuh `SELECT` atas `AGR_USERS`, tidak butuh class apa pun. Jadi **navigasi berbasis role sudah nyata sejak Tahap 1**, bukan placeholder seperti rencana semula.
 
-```
-Page Attributes untuk login.htm
+**Isi lengkap ketujuh file ada di repo, bukan disalin ulang di sini.** README menetapkan repo sebagai sumber kebenaran; menaruh salinan kedua di plan hanya melahirkan dua versi yang lambat laun berbeda.
 
-Name        Type Ref    Associated Type    Auto
---------------------------------------------------
-gv_error    TYPE        STRING             (kosong)
-gv_user     TYPE        STRING             (kosong)
-```
+- [ ] **Step 1: Buat `noaccess.htm` di SE80**
 
-`gv_user` menyimpan kembali user id yang barusan diketik, supaya saat login gagal field-nya tidak kosong lagi dan user tidak perlu mengetik ulang.
-
-- [ ] **Step 2: Tulis layout login**
-
-`src/04_bsp/zbsp_color_panel/login/layout.htm.txt`:
-
-```html
-<%@page language="abap"%>
-<html>
-<head>
-<title>Login &mdash; Color Panel</title>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-<script>
-tailwind.config = { theme: { extend: { colors: {
-  navy: '#1E3A8A', navydark: '#1E293B', navylight: '#3B4E9E' } } } }
-</script>
-</head>
-<body class="bg-slate-100 min-h-screen flex items-center justify-center">
-
-<form method="post" class="bg-white rounded-xl shadow-lg w-full max-w-sm p-8">
-
-  <div class="text-center mb-6">
-    <div class="w-14 h-14 bg-navy rounded-xl mx-auto flex items-center justify-center mb-3">
-      <i class="fa-solid fa-palette text-white text-2xl"></i>
-    </div>
-    <div class="text-xl font-bold text-slate-800">Color Panel</div>
-    <div class="text-xs text-slate-500">PT. Kayu Mebel Indonesia</div>
-  </div>
-
-  <% IF gv_error IS NOT INITIAL. %>
-  <div class="mb-4 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
-    <i class="fa-solid fa-circle-exclamation"></i> <%= gv_error %>
-  </div>
-  <% ENDIF. %>
-
-  <label class="block text-sm font-medium text-slate-700 mb-1">User ID</label>
-  <input type="text" name="user_id" value="<%= gv_user %>" autofocus
-         class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-navy"/>
-
-  <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
-  <input type="password" name="password"
-         class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-navy"/>
-
-  <button type="submit" name="onInputProcessing" value="login"
-          class="w-full bg-navy hover:bg-navylight text-white py-2 rounded-lg font-medium">
-    Masuk
-  </button>
-
-</form>
-
-</body>
-</html>
-```
-
-- [ ] **Step 3: Tulis OnInputProcessing login &mdash; versi Tahap 1**
-
-`src/04_bsp/zbsp_color_panel/login/oninputprocessing.abap.txt`:
-
-```abap
-DATA: lv_user TYPE string,
-      lv_pass TYPE string.
-
-lv_user = request->get_form_field( 'user_id' ).
-lv_pass = request->get_form_field( 'password' ).
-
-IF lv_user IS INITIAL AND lv_pass IS INITIAL.
-  RETURN.
-ENDIF.
-
-TRANSLATE lv_user TO UPPER CASE.
-gv_user = lv_user.
-
-* TAHAP 1: belum ada ZCL_CP_AUTH. Kredensial apa pun diterima asal
-* keduanya terisi, semata supaya navigasi ke main.htm bisa diuji.
-* Task 15 mengganti seluruh blok ini dengan panggilan class.
-IF lv_pass IS INITIAL.
-  gv_error = 'Password wajib diisi'.
-  RETURN.
-ENDIF.
-
-navigation->goto_page( 'main.htm' ).
-```
-
-Komentar itu wajib ditulis. Tanpa penanda eksplisit, kode yang menerima password apa pun mudah lolos ke tahap berikutnya tanpa ada yang sadar.
-
-- [ ] **Step 4: Buat halaman login.htm di SE80**
-
-SE80 &rarr; klik kanan node **Pages** di bawah `ZBSP_COLOR_PANEL` &rarr; Create &rarr; Page.
+SE80 &rarr; klik kanan **Pages** &rarr; Create &rarr; Page.
 
 ```
-Page Name    : login.htm
-Description  : Halaman Login Color Panel
+Page Name    : noaccess.htm
+Description  : Color Panel - Akses Ditolak
 Page Type    : Page with Flow Logic
 ```
 
-Setelah halaman terbuka: tab **Properties** &rarr; centang **Stateful**. Simpan.
+Tab **Properties** &rarr; centang **Stateful**.
+Tab **Page Attributes** &rarr; isi sesuai `noaccess/attributes.txt` (tiga atribut).
+Tab **Layout** &rarr; paste `noaccess/layout.htm.txt`.
+Tab **Event Handler** &rarr; **OnRequest** &rarr; paste `noaccess/onrequest.abap.txt`.
 
-Tab **Page Attributes** &rarr; isi `gv_error` dan `gv_user` sesuai `attributes.txt`.
-Tab **Layout** &rarr; paste isi `layout.htm.txt`.
-Tab **Event Handler** &rarr; pilih `OnInputProcessing` &rarr; paste isi `oninputprocessing.abap.txt`.
+Aktifkan.
 
-Aktifkan (Ctrl+F3).
-
-Expected: aktivasi sukses tanpa error. Kalau muncul error tentang karakter tidak dikenal, cari karakter non-ASCII yang lolos &mdash; biasanya tanda kutip melengkung hasil copy-paste dari dokumen.
-
-- [ ] **Step 5: Tulis Page Attributes dan layout main.htm**
-
-`src/04_bsp/zbsp_color_panel/main/attributes.txt`:
+- [ ] **Step 2: Buat `main.htm` di SE80**
 
 ```
-Page Attributes untuk main.htm
-
-Name          Type Ref    Associated Type    Auto
-----------------------------------------------------
-gv_user_name  TYPE        STRING             (kosong)
-gv_role       TYPE        STRING             (kosong)
+Page Name    : main.htm
+Description  : Color Panel - Dashboard
+Page Type    : Page with Flow Logic
 ```
 
-`src/04_bsp/zbsp_color_panel/main/layout.htm.txt`:
+Tab **Properties** &rarr; centang **Stateful**.
+Tab **Page Attributes** &rarr; isi empat atribut baku sesuai `main/attributes.txt`. Jangan buat empat atribut `gv_stat_*` yang tercatat di bagian bawah file itu &mdash; itu untuk Task 15.
+Tab **Layout** &rarr; paste `main/layout.htm.txt`.
+Tab **Event Handler** &rarr; **OnRequest** &rarr; paste `main/onrequest.abap.txt`.
 
-```html
-<%@page language="abap"%>
-<html>
-<head>
-<title>Dashboard &mdash; Color Panel</title>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-<script>
-tailwind.config = { theme: { extend: { colors: {
-  navy: '#1E3A8A', navydark: '#1E293B', navylight: '#3B4E9E' } } } }
-</script>
-</head>
-<body class="bg-slate-100">
-<div class="flex">
+Aktifkan.
 
-<aside class="w-64 bg-navydark text-white flex flex-col min-h-screen">
-  <div class="px-5 py-5 border-b border-white border-opacity-10">
-    <div class="text-lg font-bold">Color Panel</div>
-    <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
-  </div>
-  <nav class="flex-1 py-3">
-    <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white">
-      <i class="fa-solid fa-gauge w-4"></i> Dashboard
-    </a>
-    <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
-      <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
-    </a>
-    <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
-      <i class="fa-solid fa-flask w-4"></i> DCP
-    </a>
-    <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
-      <i class="fa-solid fa-users w-4"></i> User
-    </a>
-  </nav>
-  <div class="px-5 py-4 border-t border-white border-opacity-10">
-    <a href="login.htm" class="block text-center text-sm text-gray-300 hover:text-white">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </a>
-  </div>
-</aside>
+- [ ] **Step 3: Uji dengan user yang punya role**
 
-<main class="flex-1">
-  <div class="bg-white border-b border-slate-200 px-8 py-5">
-    <h1 class="text-2xl font-bold text-slate-800">Dashboard</h1>
-    <p class="text-sm text-slate-500">Ringkasan Color Panel</p>
-  </div>
+Pastikan SAP user Anda sudah ditugaskan ke `ZCP_IT` dan sudah di-User Comparison.
 
-  <div class="p-8">
-    <div class="grid grid-cols-4 gap-5 mb-6">
-      <div class="bg-white rounded-xl p-5 shadow-sm">
-        <div class="text-2xl font-bold text-slate-800">0</div>
-        <div class="text-xs text-slate-500">Request Pending</div>
-      </div>
-      <div class="bg-white rounded-xl p-5 shadow-sm">
-        <div class="text-2xl font-bold text-slate-800">0</div>
-        <div class="text-xs text-slate-500">DCP Open</div>
-      </div>
-      <div class="bg-white rounded-xl p-5 shadow-sm">
-        <div class="text-2xl font-bold text-slate-800">0</div>
-        <div class="text-xs text-slate-500">Panel Submitted</div>
-      </div>
-      <div class="bg-white rounded-xl p-5 shadow-sm">
-        <div class="text-2xl font-bold text-slate-800">0</div>
-        <div class="text-xs text-slate-500">DCP Expired</div>
-      </div>
-    </div>
+Buka `http://<host>:<port>/sap/bc/bsp/sap/zbsp_color_panel/main.htm`
 
-    <div class="bg-white rounded-xl p-5 shadow-sm text-sm text-slate-500">
-      Angka di atas masih hardcode. Task 15 menggantinya dengan hasil SELECT.
-    </div>
-  </div>
-</main>
+| Yang diperiksa | Expected |
+|---|---|
+| Dialog login SAP | Muncul sebelum halaman tampil |
+| Footer sidebar | Nama lengkap Anda, lalu `<user id> &middot; IT` |
+| Menu sidebar | Keempat menu tampil, karena IT berhak atas semuanya |
+| Kartu statistik | Empat kartu bernilai 0 |
 
-</div>
-</body>
-</html>
-```
+- [ ] **Step 4: Uji prioritas role**
 
-- [ ] **Step 6: Buat main.htm di SE80 dan uji navigasi**
+Minta Basis menugaskan user yang sama ke `ZCP_QC` **selain** `ZCP_IT`. Jalankan User Comparison. Muat ulang `main.htm`.
 
-Ulangi prosedur Step 4 untuk `main.htm` (Page with Flow Logic, Stateful), dengan Page Attributes dan Layout dari Step 5. Halaman ini belum punya event handler. Aktifkan.
+Expected: footer tetap menampilkan `IT`, bukan `QC` &mdash; prioritas ADMIN &gt; IT &gt; QC &gt; SALES bekerja. Menu User tetap tampil.
 
-Buka `http://<host>:<port>/sap/bc/bsp/sap/zbsp_color_panel/login.htm`
+Cabut kembali `ZCP_QC` setelah uji ini.
 
-Expected: form login tampil dengan kartu putih di tengah dan ikon palet navy. Isi user id apa saja dan password apa saja &rarr; klik Masuk &rarr; berpindah ke `main.htm` yang menampilkan sidebar dan empat kartu statistik bernilai 0.
+- [ ] **Step 5: Uji penolakan**
 
-Uji juga jalur gagalnya: kosongkan password &rarr; klik Masuk &rarr; kotak merah "Password wajib diisi" muncul, dan user id yang tadi diketik masih ada di field-nya.
+Pakai SAP user lain yang belum punya role `ZCP_` apa pun, atau cabut sementara role Anda lalu jalankan User Comparison.
+
+Buka `main.htm`. Expected: dilempar ke `noaccess.htm` dengan kalimat yang menyebut role `ZCP_SALES`, `ZCP_ADMIN`, `ZCP_QC`, `ZCP_IT` dan menampilkan User ID Anda.
+
+Lalu uji kebalikannya: kembalikan role, jalankan User Comparison, buka `noaccess.htm` **langsung** lewat URL. Expected: dilempar balik ke `main.htm`, bukan menampilkan halaman penolakan.
+
+- [ ] **Step 6: Uji Sales tanpa buyer**
+
+Tugaskan `ZCP_SALES` ke satu user uji, User Comparison, dan **jangan** buat barisnya di `ZCP_USER`.
+
+Expected: `noaccess.htm` dengan kalimat tentang buyer yang belum dipetakan &mdash; bukan pesan role, dan bukan masuk ke dashboard dengan daftar request milik semua buyer.
+
+Ini uji yang paling penting di Task 2. Sales tanpa `BUYER_ID` yang lolos ke `req_list.htm` akan melihat request milik buyer lain, dan kebocoran seperti itu tidak menimbulkan error apa pun yang bisa dilihat.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/04_bsp/zbsp_color_panel/login/ src/04_bsp/zbsp_color_panel/main/
-git commit -m "feat(bsp): halaman login dan main skeleton, navigasi antar halaman jalan"
+git add src/04_bsp/zbsp_color_panel/ src/01_ddic/
+git commit -m "feat(bsp): dashboard dan halaman penolakan, deteksi role dari PFCG"
 ```
-
----
 
 ### Task 3: Halaman Daftar Request dan Form Request (Skeleton)
 
@@ -518,23 +376,33 @@ tailwind.config = { theme: { extend: { colors: {
     <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
   </div>
   <nav class="flex-1 py-3">
+
     <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-gauge w-4"></i> Dashboard
     </a>
+
+    <% IF gv_role = 'SALES' OR gv_role = 'ADMIN' OR gv_role = 'IT'. %>
     <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white">
       <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'ADMIN' OR gv_role = 'QC' OR gv_role = 'IT'. %>
     <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-flask w-4"></i> DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'IT'. %>
     <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-users w-4"></i> User
     </a>
+    <% ENDIF. %>
+
   </nav>
   <div class="px-5 py-4 border-t border-white border-opacity-10">
-    <a href="login.htm" class="block text-center text-sm text-gray-300 hover:text-white">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </a>
+    <div class="text-sm font-semibold text-white"><%= gv_user_name %></div>
+    <div class="text-xs text-gray-400"><%= gv_user_id %> &middot; <%= gv_role %></div>
   </div>
 </aside>
 
@@ -643,23 +511,33 @@ tailwind.config = { theme: { extend: { colors: {
     <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
   </div>
   <nav class="flex-1 py-3">
+
     <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-gauge w-4"></i> Dashboard
     </a>
+
+    <% IF gv_role = 'SALES' OR gv_role = 'ADMIN' OR gv_role = 'IT'. %>
     <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white">
       <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'ADMIN' OR gv_role = 'QC' OR gv_role = 'IT'. %>
     <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-flask w-4"></i> DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'IT'. %>
     <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-users w-4"></i> User
     </a>
+    <% ENDIF. %>
+
   </nav>
   <div class="px-5 py-4 border-t border-white border-opacity-10">
-    <a href="login.htm" class="block text-center text-sm text-gray-300 hover:text-white">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </a>
+    <div class="text-sm font-semibold text-white"><%= gv_user_name %></div>
+    <div class="text-xs text-gray-400"><%= gv_user_id %> &middot; <%= gv_role %></div>
   </div>
 </aside>
 
@@ -884,23 +762,33 @@ tailwind.config = { theme: { extend: { colors: {
     <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
   </div>
   <nav class="flex-1 py-3">
+
     <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-gauge w-4"></i> Dashboard
     </a>
+
+    <% IF gv_role = 'SALES' OR gv_role = 'ADMIN' OR gv_role = 'IT'. %>
     <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white">
       <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'ADMIN' OR gv_role = 'QC' OR gv_role = 'IT'. %>
     <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-flask w-4"></i> DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'IT'. %>
     <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-users w-4"></i> User
     </a>
+    <% ENDIF. %>
+
   </nav>
   <div class="px-5 py-4 border-t border-white border-opacity-10">
-    <a href="login.htm" class="block text-center text-sm text-gray-300 hover:text-white">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </a>
+    <div class="text-sm font-semibold text-white"><%= gv_user_name %></div>
+    <div class="text-xs text-gray-400"><%= gv_user_id %> &middot; <%= gv_role %></div>
   </div>
 </aside>
 
@@ -1138,23 +1026,33 @@ tailwind.config = { theme: { extend: { colors: {
     <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
   </div>
   <nav class="flex-1 py-3">
+
     <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-gauge w-4"></i> Dashboard
     </a>
+
+    <% IF gv_role = 'SALES' OR gv_role = 'ADMIN' OR gv_role = 'IT'. %>
     <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'ADMIN' OR gv_role = 'QC' OR gv_role = 'IT'. %>
     <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white">
       <i class="fa-solid fa-flask w-4"></i> DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'IT'. %>
     <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-users w-4"></i> User
     </a>
+    <% ENDIF. %>
+
   </nav>
   <div class="px-5 py-4 border-t border-white border-opacity-10">
-    <a href="login.htm" class="block text-center text-sm text-gray-300 hover:text-white">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </a>
+    <div class="text-sm font-semibold text-white"><%= gv_user_name %></div>
+    <div class="text-xs text-gray-400"><%= gv_user_id %> &middot; <%= gv_role %></div>
   </div>
 </aside>
 
@@ -1232,23 +1130,33 @@ tailwind.config = { theme: { extend: { colors: {
     <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
   </div>
   <nav class="flex-1 py-3">
+
     <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-gauge w-4"></i> Dashboard
     </a>
+
+    <% IF gv_role = 'SALES' OR gv_role = 'ADMIN' OR gv_role = 'IT'. %>
     <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'ADMIN' OR gv_role = 'QC' OR gv_role = 'IT'. %>
     <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white">
       <i class="fa-solid fa-flask w-4"></i> DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'IT'. %>
     <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-users w-4"></i> User
     </a>
+    <% ENDIF. %>
+
   </nav>
   <div class="px-5 py-4 border-t border-white border-opacity-10">
-    <a href="login.htm" class="block text-center text-sm text-gray-300 hover:text-white">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </a>
+    <div class="text-sm font-semibold text-white"><%= gv_user_name %></div>
+    <div class="text-xs text-gray-400"><%= gv_user_id %> &middot; <%= gv_role %></div>
   </div>
 </aside>
 
@@ -1529,23 +1437,33 @@ tailwind.config = { theme: { extend: { colors: {
     <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
   </div>
   <nav class="flex-1 py-3">
+
     <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-gauge w-4"></i> Dashboard
     </a>
+
+    <% IF gv_role = 'SALES' OR gv_role = 'ADMIN' OR gv_role = 'IT'. %>
     <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'ADMIN' OR gv_role = 'QC' OR gv_role = 'IT'. %>
     <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
       <i class="fa-solid fa-flask w-4"></i> DCP
     </a>
+    <% ENDIF. %>
+
+    <% IF gv_role = 'IT'. %>
     <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white">
       <i class="fa-solid fa-users w-4"></i> User
     </a>
+    <% ENDIF. %>
+
   </nav>
   <div class="px-5 py-4 border-t border-white border-opacity-10">
-    <a href="login.htm" class="block text-center text-sm text-gray-300 hover:text-white">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </a>
+    <div class="text-sm font-semibold text-white"><%= gv_user_name %></div>
+    <div class="text-xs text-gray-400"><%= gv_user_id %> &middot; <%= gv_role %></div>
   </div>
 </aside>
 
@@ -1734,7 +1652,7 @@ Task 7&ndash;14 di bawah adalah penunjuk ke task di dokumen tersebut, dengan tam
 
 - [ ] **Task 7:** Kerjakan Task 3 Step 5d-3, 5e, dan 5f di plan 28 Juli. Setelah selesai, perbarui `report/report.md` menandai Task 3 tuntas.
 - [ ] **Task 8:** Kerjakan Task 4 di plan 28 Juli. Expected: 5 unit test hijau.
-- [ ] **Task 9:** Kerjakan Task 5 di plan 28 Juli. Expected: `ZCP_AUDIT_LOG` bertambah baris dengan `ACTION_BY` berisi USER_ID, bukan `auto_email`.
+- [ ] **Task 9:** Kerjakan Task 5 di plan 28 Juli, dengan satu penyesuaian: `ACTION_BY` diisi `SY-UNAME`, bukan USER_ID dari session cookie &mdash; session cookie sudah tidak ada. Expected: `ZCP_AUDIT_LOG` bertambah baris dengan `ACTION_BY` sama dengan SAP user yang menjalankan aksi.
 - [ ] **Task 10:** Kerjakan Task 6 di plan 28 Juli. Expected: 4 unit test hijau, dan satu user uji `ARYA` role IT tersimpan dengan password ter-hash.
 - [ ] **Task 11:** Kerjakan Task 7 di plan 28 Juli.
 - [ ] **Task 12:** Kerjakan Task 8 di plan 28 Juli.
@@ -1751,50 +1669,51 @@ Setiap task di tahap ini mengikuti bentuk yang sama: buang blok bertanda `TAHAP 
 
 Markup tidak berubah. Yang berubah hanya sumber datanya. Itulah gunanya Tahap 1 mengunci struktur HTML lebih dulu.
 
-### Task 15: Sambungkan login.htm dan main.htm
+### Task 15: Pindahkan Deteksi Role ke ZCL_CP_AUTH dan Hidupkan Statistik
 
 **Files:**
-- Modify: `src/04_bsp/zbsp_color_panel/login/oninputprocessing.abap.txt`
-- Create: `src/04_bsp/zbsp_color_panel/main/onrequest.abap.txt`
+- Modify: `src/04_bsp/zbsp_color_panel/main/onrequest.abap.txt`
+- Modify: `src/04_bsp/zbsp_color_panel/main/attributes.txt`
 - Modify: `src/04_bsp/zbsp_color_panel/main/layout.htm.txt`
-- Modify: `src/04_bsp/zbsp_color_panel/_shared/nav.htm.txt`
+- Modify: `src/04_bsp/zbsp_color_panel/_shared/role_detect.abap.txt`
 
 **Interfaces:**
-- Consumes: `ZCL_CP_AUTH=>login( )`, `save_session( )`, `read_session( )` dari Task 10
-- Produces: pola pembacaan session di `OnRequest` yang disalin Task 16&ndash;20
+- Consumes: `ZCL_CP_AUTH=>resolve_user( )` dari Task 10
+- Produces: pola pemanggilan `resolve_user( )` di `OnRequest` yang disalin Task 16&ndash;20
 
-- [ ] **Step 1: Ganti OnInputProcessing login dengan panggilan class**
+REVISI 6 Agustus 2026. Task ini semula menyambungkan `login.htm` ke `ZCL_CP_AUTH=>login( )`. Karena autentikasi sudah dikerjakan SAP dan deteksi role sudah nyata sejak Task 2, yang tersisa di sini **bukan perbaikan melainkan perapian**: memindahkan potongan yang tersalin di delapan `OnRequest` ke satu method.
 
-Isi lengkapnya ada di plan 28 Juli, Task 12 Step 3. Salin apa adanya.
+Perilakunya tidak boleh berubah sedikit pun. Kalau setelah pemindahan ada halaman yang berperilaku beda, itu bug yang Anda perkenalkan, bukan perbedaan yang diharapkan.
 
-Yang wajib dipastikan: blok berkomentar `TAHAP 1` beserta `IF lv_pass IS INITIAL` yang menerima password apa pun **hilang seluruhnya**. Cari string `TAHAP 1` di file untuk memastikan tidak ada sisa.
+- [ ] **Step 1: Ganti isi role_detect dengan satu panggilan**
 
-- [ ] **Step 2: Tulis OnRequest main.htm**
-
-`src/04_bsp/zbsp_color_panel/main/onrequest.abap.txt`:
+Seluruh isi `_shared/role_detect.abap.txt` diganti menjadi:
 
 ```abap
-DATA: lv_sid     TYPE string,
-      ls_session TYPE zcl_cp_auth=>ty_session,
-      lv_count   TYPE i.
+DATA: ls_user TYPE zcl_cp_auth=>ty_user.
 
-lv_sid = runtime->session_id.
-ls_session = zcl_cp_auth=>read_session( lv_sid ).
+ls_user = zcl_cp_auth=>resolve_user( ).
 
-IF ls_session-user_id IS INITIAL.
-  navigation->goto_page( 'login.htm' ).
+IF ls_user-authorized <> 'X'.
+  navigation->goto_page( 'noaccess.htm' ).
   RETURN.
 ENDIF.
 
-gv_user_name = ls_session-full_name.
-gv_role      = ls_session-role.
+gv_user_id   = ls_user-user_id.
+gv_user_name = ls_user-full_name.
+gv_role      = ls_user-role.
+gv_buyer_id  = ls_user-buyer_id.
 ```
 
-Blok pemeriksaan session ini disalin ke `OnRequest` setiap halaman selain `login.htm`. Tanpa itu, halaman bisa dibuka langsung lewat URL tanpa login.
+Lalu sebarkan ke `OnRequest` kedelapan halaman, menggantikan blok panjang yang ada sekarang.
 
-- [ ] **Step 3: Ganti angka hardcode di main.htm dengan SELECT COUNT**
+- [ ] **Step 2: Tambahkan empat atribut statistik**
 
-Tambahkan ke `onrequest.abap.txt` setelah blok session, lalu ganti keempat angka `0` di layout dengan `<%= gv_stat_req %>` dan seterusnya. Deklarasikan empat atribut baru bertipe `I` di tab Page Attributes: `gv_stat_req`, `gv_stat_dcp`, `gv_stat_panel`, `gv_stat_exp`.
+Tab Page Attributes `main.htm`, tambahkan empat atribut bertipe `I` yang sudah dicatat di bagian bawah `main/attributes.txt`: `gv_stat_req`, `gv_stat_dcp`, `gv_stat_panel`, `gv_stat_exp`.
+
+- [ ] **Step 3: Hitung angka kartu statistik**
+
+Tambahkan ke `main/onrequest.abap.txt` setelah blok resolve_user:
 
 ```abap
 SELECT COUNT(*) INTO gv_stat_req
@@ -1815,33 +1734,17 @@ SELECT COUNT(*) INTO gv_stat_exp
     AND expire_date < sy-datum.
 ```
 
-- [ ] **Step 4: Sembunyikan menu yang tidak sesuai role**
+Lalu ganti keempat angka `0` yang di-hardcode di `main/layout.htm.txt` dengan `<%= gv_stat_req %>`, `<%= gv_stat_dcp %>`, `<%= gv_stat_panel %>`, dan `<%= gv_stat_exp %>`, dan hapus paragraf penutup yang berbunyi "masih hardcode nol".
 
-Bungkus tiap `<a>` di sidebar dengan pemeriksaan `gv_role`. Contoh untuk menu DCP yang hanya untuk ADMIN dan IT:
+- [ ] **Step 4: Uji dan commit**
 
-```html
-<% IF gv_role CS 'ADMIN' OR gv_role CS 'IT'. %>
-<a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
-  <i class="fa-solid fa-flask w-4"></i> DCP
-</a>
-<% ENDIF. %>
-```
+Buka `main.htm` sebagai user ber-role IT. Expected: keempat angka cocok dengan hasil `SE16N` atas tabel yang bersangkutan, dan footer sidebar tetap menampilkan nama serta role yang sama seperti sebelum pemindahan.
 
-Peta role per menu: Dashboard semua role; Request DCP untuk SALES, ADMIN, IT; DCP untuk ADMIN, QC, IT; User untuk IT saja.
-
-Sebarkan perubahan sidebar ini ke kedelapan layout. Ini konsekuensi dari keputusan menyalin potongan alih-alih meng-include-nya.
-
-- [ ] **Step 5: Uji dan commit**
-
-Login dengan user `ARYA` password yang diset di Task 10. Expected: masuk ke `main.htm`, nama muncul, sidebar hanya menampilkan menu untuk role IT.
-
-Login dengan password salah. Expected: kotak merah berisi pesan dari `ZCX_CP_ERROR`, tetap di `login.htm`.
-
-Buka `main.htm` langsung di tab baru tanpa login. Expected: dilempar ke `login.htm`.
+Uji ulang Step 5 dan Step 6 di Task 2 &mdash; penolakan user tanpa role dan Sales tanpa buyer harus tetap berperilaku persis sama.
 
 ```bash
 git add src/04_bsp/zbsp_color_panel/
-git commit -m "feat(bsp): sambungkan login dan main ke ZCL_CP_AUTH, sidebar per role"
+git commit -m "refactor(bsp): pindahkan deteksi role ke ZCL_CP_AUTH, hidupkan statistik dashboard"
 ```
 
 ### Task 16: Sambungkan req_list.htm dan req_form.htm
