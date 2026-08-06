@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Request DCP Baru &mdash; Color Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="../assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main">
+    <div class="page-header" id="page-header"></div>
+
+    <div class="page-content">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+        <!-- KIRI: Form input SO -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fa-solid fa-envelope-open-text"></i>
+                Form Request DCP
+              </h3>
+            </div>
+            <div class="card-body">
+
+              <div class="form-group">
+                <label class="form-label form-label-required">Pilih Sales Order (SO)</label>
+                <select id="fSoNumber" class="form-control">
+                  <option value="">- Pilih SO -</option>
+                </select>
+                <div class="form-help">Pilih SO yang materialnya belum punya Color Code</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Catatan</label>
+                <textarea id="fRemarks" class="form-control" maxlength="200"
+                  placeholder="Catatan tambahan (opsional)"></textarea>
+              </div>
+
+              <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+                <a href="request_list.html" class="btn btn-secondary">
+                  <i class="fa-solid fa-arrow-left"></i> Batal
+                </a>
+                <button class="btn btn-primary" id="btnSubmit" disabled>
+                  <i class="fa-solid fa-paper-plane"></i>
+                  <span>Submit Request</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Info card -->
+          <div class="card mt-4" style="background:#FEF3C7;border:1px solid #F59E0B;">
+            <div class="card-body" style="display:flex;gap:12px;">
+              <i class="fa-solid fa-lightbulb" style="color:#92400E;font-size:20px;margin-top:2px;"></i>
+              <div style="font-size:12px;color:#78350F;line-height:1.6;">
+                <div style="font-weight:700;margin-bottom:4px;">Alur Setelah Submit:</div>
+                <ol style="margin:0;padding-left:18px;">
+                  <li>Request masuk ke Admin Color untuk review</li>
+                  <li>Kalau approve: sistem otomatis buat Color Code + DCP (per material) + 15 panel non-aktif</li>
+                  <li>Kalau reject: Admin isi alasan</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KANAN: Preview SO -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fa-solid fa-file-invoice"></i>
+                Preview Detail SO
+              </h3>
+            </div>
+            <div id="soPreview">
+              <div class="empty-state">
+                <div class="empty-state-icon"><i class="fa-solid fa-file"></i></div>
+                <div class="empty-state-title">Belum ada SO dipilih</div>
+                <div class="empty-state-text">Pilih SO di sebelah kiri untuk melihat detail.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/db.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/biz.js"></script>
+<script src="../assets/js/sidebar.js"></script>
+<script>
+
+if (Auth.guard([ROLES.SALES, ROLES.ADMIN, ROLES.IT])) {
+  Sidebar.render();
+  Sidebar.renderHeader('Request DCP Baru', 'Ajukan pembuatan DCP berdasarkan Sales Order');
+
+  populateSoDropdown();
+  Utils.el('fSoNumber').addEventListener('change', renderSoPreview);
+  Utils.el('btnSubmit').addEventListener('click', submitRequest);
+}
+
+/* ============================================================
+ * SO DROPDOWN
+ * Sales cuma lihat SO milik buyer-nya. Admin/IT lihat semua.
+ * ============================================================ */
+function populateSoDropdown() {
+  const session = Auth.getSession();
+  const isSalesOnly = Auth.hasRole(ROLES.SALES) && !Auth.hasRole(ROLES.ADMIN) && !Auth.hasRole(ROLES.IT);
+
+  let sos = DB.all('sales_orders');
+  if (isSalesOnly && session.buyer_id) {
+    sos = sos.filter(s => s.buyer_id === session.buyer_id);
+  }
+
+  /* Filter SO yang belum pernah di-request (status pending/approved) */
+  const usedSo = DB.filter('requests', r =>
+    r.status === REQ_STATUS.PENDING || r.status === REQ_STATUS.APPROVED
+  ).map(r => r.so_number);
+
+  sos = sos.filter(s => !usedSo.includes(s.so_number));
+
+  const select = Utils.el('fSoNumber');
+  let opts = '<option value="">- Pilih SO -</option>';
+  for (const s of sos) {
+    opts += `<option value="${Utils.escapeHtml(s.so_number)}">${Utils.escapeHtml(s.so_number)} — ${Utils.escapeHtml(DB.getBuyerName(s.buyer_id))}</option>`;
+  }
+  select.innerHTML = opts;
+
+  if (sos.length === 0) {
+    Utils.setHtml('soPreview', `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-face-frown"></i></div>
+        <div class="empty-state-title">Tidak ada SO tersedia</div>
+        <div class="empty-state-text">Semua SO milik Anda sudah pernah di-request atau tidak ada SO baru.</div>
+      </div>
+    `);
+  }
+}
+
+/* ============================================================
+ * PREVIEW SO
+ * ============================================================ */
+function renderSoPreview() {
+  const soNumber = Utils.el('fSoNumber').value;
+  Utils.el('btnSubmit').disabled = !soNumber;
+
+  if (!soNumber) {
+    Utils.setHtml('soPreview', `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-file"></i></div>
+        <div class="empty-state-title">Belum ada SO dipilih</div>
+      </div>
+    `);
+    return;
+  }
+
+  const so = DB.getSalesOrder(soNumber);
+  if (!so) {
+    Utils.setHtml('soPreview', `
+      <div class="table-empty">SO tidak ditemukan</div>
+    `);
+    return;
+  }
+
+  let itemsHtml = '';
+  let newCount = 0;
+  let existingCount = 0;
+
+  for (const item of so.items) {
+    const hasColor = DB.materialHasColorCode(item.matnr);
+    const mat = DB.getMaterial(item.matnr);
+    const badge = hasColor
+      ? '<span class="badge badge-warning">Sudah ada Color Code</span>'
+      : '<span class="badge badge-success">Warna Baru</span>';
+    if (hasColor) existingCount++; else newCount++;
+
+    itemsHtml += `
+      <tr>
+        <td class="text-mono text-sm">${Utils.escapeHtml(item.so_item)}</td>
+        <td>
+          <div class="text-mono text-sm" style="font-weight:600;">${Utils.escapeHtml(item.matnr)}</div>
+          <div class="text-sm text-muted">${Utils.escapeHtml(mat ? mat.maktx : '-')}</div>
+        </td>
+        <td class="text-center">${item.menge} ${item.meins}</td>
+        <td>${badge}</td>
+      </tr>
+    `;
+  }
+
+  const warningHtml = existingCount > 0
+    ? `<div style="padding:10px 12px;background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;font-size:12px;color:#78350F;margin-bottom:12px;">
+         <i class="fa-solid fa-triangle-exclamation"></i>
+         <strong>${existingCount} material</strong> sudah punya Color Code — akan di-skip saat approve.
+         ${newCount === 0
+           ? 'Tidak ada material baru yang bisa jadi DCP. Silakan gunakan halaman <strong>Renewal MCP</strong>.'
+           : `Yang akan diproses: <strong>${newCount} material baru</strong>.`}
+       </div>`
+    : '';
+
+  Utils.setHtml('soPreview', `
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div>
+          <div class="text-sm text-muted">SO Number</div>
+          <div class="text-mono" style="font-weight:600;">${Utils.escapeHtml(so.so_number)}</div>
+        </div>
+        <div>
+          <div class="text-sm text-muted">Tanggal SO</div>
+          <div>${Utils.formatDate(so.so_date)}</div>
+        </div>
+        <div style="grid-column:span 2;">
+          <div class="text-sm text-muted">Buyer</div>
+          <div>${Utils.escapeHtml(DB.getBuyerName(so.buyer_id))}</div>
+        </div>
+      </div>
+
+      ${warningHtml}
+
+      <div style="font-weight:600;margin-bottom:8px;font-size:13px;">Item Material</div>
+      <div class="table-wrap">
+        <table class="table" style="font-size:12px;">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Material</th>
+              <th class="text-center">Qty</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>${itemsHtml}</tbody>
+        </table>
+      </div>
+    </div>
+  `);
+}
+
+/* ============================================================
+ * SUBMIT
+ * ============================================================ */
+function submitRequest() {
+  const soNumber = Utils.el('fSoNumber').value;
+  const remarks = Utils.el('fRemarks').value.trim();
+
+  if (!soNumber) return Utils.toastWarning('Pilih SO terlebih dulu');
+
+  Utils.confirm(
+    'Submit Request?',
+    `Request untuk SO ${soNumber} akan dikirim ke Admin Color untuk di-review.`,
+    'Ya, submit'
+  ).then(res => {
+    if (!res.isConfirmed) return;
+
+    const result = Biz.createRequest(soNumber, remarks);
+    if (!result.ok) {
+      return Utils.alertError('Gagal Submit', result.msg);
+    }
+
+    Utils.alertSuccess('Request Terkirim', `Request ${result.request_id} berhasil dibuat.`)
+      .then(() => Utils.redirect(`pages/request_detail.html?id=${result.request_id}`));
+  });
+}
+
+</script>
+</body>
+</html>

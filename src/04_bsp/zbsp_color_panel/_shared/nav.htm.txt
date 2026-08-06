@@ -1,0 +1,56 @@
+Potongan SIDEBAR bersama untuk aplikasi BSP ZBSP_COLOR_PANEL
+============================================================
+
+Disalin ke setiap halaman kecuali login.htm, tepat di dalam
+<div class="flex"> sebagai anak pertama.
+
+TAHAP 1: seluruh menu ditampilkan tanpa penyaringan role.
+Penyembunyian per role masuk di Task 15, dengan bentuk:
+
+  <% IF gv_role CS 'ADMIN' OR gv_role CS 'IT'. %>
+    ... satu blok <a> ...
+  <% ENDIF. %>
+
+Peta role per menu untuk Task 15:
+  Dashboard    : semua role
+  Request DCP  : SALES, ADMIN, IT
+  DCP          : ADMIN, QC, IT
+  User         : IT saja
+
+MENANDAI MENU AKTIF: pada halaman yang bersangkutan, ganti kelas
+  class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white"
+menjadi
+  class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white"
+
+ATURAN: nol karakter non-ASCII. Atribut class dalam string JavaScript
+harus satu baris, jangan dipecah antar baris.
+
+--- SALIN MULAI BARIS BERIKUT ---
+
+<aside class="w-64 bg-navydark text-white flex flex-col min-h-screen">
+  <div class="px-5 py-5 border-b border-white border-opacity-10">
+    <div class="text-lg font-bold">Color Panel</div>
+    <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
+  </div>
+  <nav class="flex-1 py-3">
+    <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-gauge w-4"></i> Dashboard
+    </a>
+    <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
+    </a>
+    <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-flask w-4"></i> DCP
+    </a>
+    <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-users w-4"></i> User
+    </a>
+  </nav>
+  <div class="px-5 py-4 border-t border-white border-opacity-10">
+    <a href="login.htm" class="block text-center text-sm text-gray-300 hover:text-white">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </a>
+  </div>
+</aside>
+
+--- SALIN SAMPAI BARIS DI ATAS ---

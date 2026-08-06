@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Log &mdash; Color Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="../assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="page-header" id="page-header"></div>
+    <div class="page-content">
+
+      <!-- Toolbar -->
+      <div class="card mb-4">
+        <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <input type="text" id="searchInput" class="form-control"
+              placeholder="Cari ref ID, aksi, deskripsi, atau user...">
+          </div>
+          <select id="filterRefType" class="form-control" style="max-width:160px;">
+            <option value="">Semua Ref Type</option>
+            <option value="USER">USER</option>
+            <option value="BUYER">BUYER</option>
+            <option value="COLOR">COLOR</option>
+            <option value="REQUEST">REQUEST</option>
+            <option value="DCP">DCP</option>
+            <option value="MCP">MCP</option>
+          </select>
+          <select id="filterAction" class="form-control" style="max-width:180px;">
+            <option value="">Semua Aksi</option>
+          </select>
+          <select id="filterUser" class="form-control" style="max-width:200px;">
+            <option value="">Semua User</option>
+          </select>
+          <button class="btn btn-secondary" onclick="exportCsv()">
+            <i class="fa-solid fa-download"></i> Export CSV
+          </button>
+          <button class="btn btn-danger" id="btnClear" onclick="clearLogs()" title="Kosongkan log (dev only)">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-clipboard-list"></i>
+            Audit Log Sistem
+          </h3>
+          <span class="text-muted text-sm" id="totalInfo"></span>
+        </div>
+        <div id="tableWrap">
+          <div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuat...</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/db.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/sidebar.js"></script>
+<script>
+
+if (Auth.guard([ROLES.IT])) {
+  Sidebar.render();
+  Sidebar.renderHeader('Audit Log', 'Riwayat semua aksi di sistem (khusus IT)');
+  populateFilters();
+  renderTable();
+
+  Utils.el('searchInput').addEventListener('input', Utils.debounce(renderTable, 200));
+  Utils.el('filterRefType').addEventListener('change', renderTable);
+  Utils.el('filterAction').addEventListener('change', renderTable);
+  Utils.el('filterUser').addEventListener('change', renderTable);
+}
+
+function populateFilters() {
+  const logs = DB.all('audit_logs');
+  const actions = [...new Set(logs.map(l => l.action))].sort();
+  const users = [...new Set(logs.map(l => l.action_by))].filter(Boolean).sort();
+
+  let actionOpts = '<option value="">Semua Aksi</option>';
+  actions.forEach(a => actionOpts += `<option value="${Utils.escapeHtml(a)}">${Utils.escapeHtml(a)}</option>`);
+  Utils.el('filterAction').innerHTML = actionOpts;
+
+  let userOpts = '<option value="">Semua User</option>';
+  users.forEach(u => {
+    const usr = DB.getUser(u);
+    const name = usr ? `${usr.full_name} (${u})` : u;
+    userOpts += `<option value="${Utils.escapeHtml(u)}">${Utils.escapeHtml(name)}</option>`;
+  });
+  Utils.el('filterUser').innerHTML = userOpts;
+}
+
+function getFiltered() {
+  const q = Utils.el('searchInput').value.toLowerCase().trim();
+  const filterRefType = Utils.el('filterRefType').value;
+  const filterAction = Utils.el('filterAction').value;
+  const filterUser = Utils.el('filterUser').value;
+
+  let logs = DB.all('audit_logs');
+  if (q) {
+    logs = logs.filter(l =>
+      (l.ref_id || '').toLowerCase().includes(q) ||
+      (l.action || '').toLowerCase().includes(q) ||
+      (l.description || '').toLowerCase().includes(q) ||
+      (l.action_by || '').toLowerCase().includes(q) ||
+      (l.action_by_name || '').toLowerCase().includes(q)
+    );
+  }
+  if (filterRefType) logs = logs.filter(l => l.ref_type === filterRefType);
+  if (filterAction) logs = logs.filter(l => l.action === filterAction);
+  if (filterUser) logs = logs.filter(l => l.action_by === filterUser);
+  logs.sort((a, b) => (b.action_at || '').localeCompare(a.action_at || ''));
+  return logs;
+}
+
+function renderTable() {
+  const logs = getFiltered();
+  Utils.setText('totalInfo', `${logs.length} log`);
+
+  if (logs.length === 0) {
+    Utils.setHtml('tableWrap', `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-inbox"></i></div>
+        <div class="empty-state-title">Tidak ada log</div>
+        <div class="empty-state-text">Coba ubah filter atau lakukan aksi di sistem.</div>
+      </div>
+    `);
+    return;
+  }
+
+  const refTypeIcon = {
+    USER: 'fa-user', BUYER: 'fa-building', COLOR: 'fa-palette',
+    REQUEST: 'fa-envelope-open-text', DCP: 'fa-flask', MCP: 'fa-box-archive',
+  };
+  const refTypeColor = {
+    USER: 'badge-neutral', BUYER: 'badge-info', COLOR: 'badge-info',
+    REQUEST: 'badge-warning', DCP: 'badge-info', MCP: 'badge-success',
+  };
+
+  let rows = '';
+  for (const l of logs) {
+    const linkable = ['REQUEST', 'DCP', 'MCP'].includes(l.ref_type);
+    let refCell = `<span class="text-mono text-sm">${Utils.escapeHtml(l.ref_id || '-')}</span>`;
+    if (linkable && l.ref_id) {
+      const page = l.ref_type === 'REQUEST' ? 'request_detail.html'
+                 : l.ref_type === 'DCP' ? 'dcp_detail.html'
+                 : 'mcp_detail.html';
+      refCell = `<a href="${page}?id=${encodeURIComponent(l.ref_id)}" class="text-mono text-sm">${Utils.escapeHtml(l.ref_id)}</a>`;
+    }
+
+    rows += `
+      <tr>
+        <td class="text-sm text-mono">${Utils.formatDateTime(l.action_at)}</td>
+        <td>
+          <span class="badge ${refTypeColor[l.ref_type] || 'badge-neutral'}">
+            <i class="fa-solid ${refTypeIcon[l.ref_type] || 'fa-tag'}"></i>
+            ${Utils.escapeHtml(l.ref_type || '-')}
+          </span>
+        </td>
+        <td>${refCell}</td>
+        <td class="text-sm"><strong>${Utils.escapeHtml(l.action)}</strong></td>
+        <td class="text-sm">${Utils.escapeHtml(l.description || '-')}</td>
+        <td class="text-sm">
+          <div>${Utils.escapeHtml(l.action_by_name || l.action_by || '-')}</div>
+          <div class="text-muted">${Utils.escapeHtml(l.action_by || '')}</div>
+        </td>
+      </tr>
+    `;
+  }
+
+  Utils.setHtml('tableWrap', `
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Waktu</th>
+            <th>Ref Type</th>
+            <th>Ref ID</th>
+            <th>Aksi</th>
+            <th>Deskripsi</th>
+            <th>Oleh</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `);
+}
+
+/* ============================================================
+ * EXPORT CSV
+ * ============================================================ */
+function exportCsv() {
+  const logs = getFiltered();
+  if (logs.length === 0) return Utils.toastWarning('Tidak ada log untuk di-export');
+
+  const headers = ['Waktu', 'Ref Type', 'Ref ID', 'Aksi', 'Deskripsi', 'Oleh (User ID)', 'Oleh (Nama)', 'IP'];
+  const rows = logs.map(l => [
+    l.action_at || '',
+    l.ref_type || '',
+    l.ref_id || '',
+    l.action || '',
+    (l.description || '').replace(/"/g, '""'),
+    l.action_by || '',
+    (l.action_by_name || '').replace(/"/g, '""'),
+    l.ip_address || '',
+  ]);
+
+  const csv = [headers, ...rows].map(r =>
+    r.map(c => `"${c}"`).join(',')
+  ).join('\n');
+
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `audit_log_${Utils.today()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  Utils.toastSuccess('CSV di-export');
+}
+
+function clearLogs() {
+  Utils.confirm(
+    'Hapus semua Audit Log?',
+    'Semua log akan hilang. Ini fitur dev-only, tidak ada di production.',
+    'Ya, hapus semua'
+  ).then(r => {
+    if (!r.isConfirmed) return;
+    DB.write('audit_logs', []);
+    Utils.toastSuccess('Semua log dihapus');
+    populateFilters();
+    renderTable();
+  });
+}
+</script>
+</body>
+</html>

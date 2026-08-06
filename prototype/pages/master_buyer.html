@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Buyer &mdash; Color Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="../assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main">
+    <div class="page-header" id="page-header"></div>
+
+    <div class="page-content">
+
+      <div class="card mb-4">
+        <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <input type="text" id="searchInput" class="form-control"
+              placeholder="Cari kode, nama buyer, atau perusahaan...">
+          </div>
+          <select id="filterActive" class="form-control" style="max-width:160px;">
+            <option value="">Semua Status</option>
+            <option value="X">Aktif</option>
+            <option value="N">Non-Aktif</option>
+          </select>
+          <button class="btn btn-primary" id="btnAdd">
+            <i class="fa-solid fa-plus"></i>
+            <span>Tambah Buyer</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-building"></i>
+            Daftar Buyer
+          </h3>
+          <span class="text-muted text-sm" id="totalInfo"></span>
+        </div>
+        <div id="tableWrap">
+          <div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuat...</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<!-- Modal -->
+<div id="modalForm" class="hidden" style="position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:12px;max-width:640px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="padding:20px 24px;border-bottom:1px solid var(--color-gray-200);display:flex;justify-content:space-between;align-items:center;">
+      <h3 style="margin:0;font-size:16px;font-weight:700;" id="modalTitle">Tambah Buyer</h3>
+      <button class="btn btn-secondary btn-icon" onclick="closeModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div style="padding:24px;">
+
+      <div class="form-group">
+        <label class="form-label">Buyer ID</label>
+        <input type="text" id="fBuyerId" class="form-control" readonly placeholder="Auto-generate saat simpan">
+        <div class="form-help">Auto-generate: BYR-YYYY-NNNN (mirror SNRO di SAP)</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label form-label-required">Nama Buyer</label>
+          <input type="text" id="fBuyerName" class="form-control" maxlength="60">
+        </div>
+        <div class="form-group">
+          <label class="form-label form-label-required">Perusahaan</label>
+          <input type="text" id="fCompany" class="form-control" maxlength="60">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label form-label-required">Negara (Kode)</label>
+          <input type="text" id="fCountry" class="form-control" maxlength="3" placeholder="US, SG, ID, ...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kontak (Person)</label>
+          <input type="text" id="fContact" class="form-control" maxlength="60">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="fEmail" class="form-control" maxlength="80">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telepon</label>
+          <input type="text" id="fPhone" class="form-control" maxlength="20">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Catatan</label>
+        <textarea id="fRemarks" class="form-control" maxlength="200"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label form-label-required">Status</label>
+        <select id="fActive" class="form-control">
+          <option value="X">Aktif</option>
+          <option value="N">Non-Aktif</option>
+        </select>
+      </div>
+
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid var(--color-gray-200);background:var(--color-gray-50);display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
+      <button class="btn btn-primary" onclick="saveBuyer()">
+        <i class="fa-solid fa-check"></i>
+        <span>Simpan</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/db.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/sidebar.js"></script>
+<script>
+
+let editingBuyerId = null;
+
+if (Auth.guard([ROLES.ADMIN, ROLES.IT])) {
+  Sidebar.render();
+  Sidebar.renderHeader('Master Buyer', 'Kelola data buyer / customer');
+  renderTable();
+
+  Utils.el('searchInput').addEventListener('input', Utils.debounce(renderTable, 200));
+  Utils.el('filterActive').addEventListener('change', renderTable);
+  Utils.el('btnAdd').addEventListener('click', openAddModal);
+}
+
+/* Count usage (untuk warning saat delete) */
+function countUsage(buyerId) {
+  const users = DB.filter('users', u => u.buyer_id === buyerId).length;
+  const requests = DB.filter('requests', r => r.buyer_id === buyerId).length;
+  const dcps = DB.filter('dcp_headers', d => d.buyer_id === buyerId).length;
+  const mcps = DB.filter('mcp_headers', m => m.buyer_id === buyerId).length;
+  return { users, requests, dcps, mcps, total: users + requests + dcps + mcps };
+}
+
+function renderTable() {
+  const q = Utils.el('searchInput').value.toLowerCase().trim();
+  const filterActive = Utils.el('filterActive').value;
+
+  let buyers = DB.all('buyers');
+
+  if (q) {
+    buyers = buyers.filter(b =>
+      (b.buyer_id || '').toLowerCase().includes(q) ||
+      (b.buyer_name || '').toLowerCase().includes(q) ||
+      (b.company || '').toLowerCase().includes(q) ||
+      (b.contact || '').toLowerCase().includes(q)
+    );
+  }
+  if (filterActive) {
+    buyers = buyers.filter(b => (b.is_active || 'N') === filterActive);
+  }
+
+  Utils.setText('totalInfo', `${buyers.length} buyer`);
+
+  if (buyers.length === 0) {
+    Utils.setHtml('tableWrap', `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-building-circle-xmark"></i></div>
+        <div class="empty-state-title">Tidak ada buyer</div>
+        <div class="empty-state-text">Coba ubah filter atau tambah buyer baru.</div>
+      </div>
+    `);
+    return;
+  }
+
+  let rows = '';
+  for (const b of buyers) {
+    const usage = countUsage(b.buyer_id);
+    const isActive = b.is_active === 'X';
+    const statusBadge = isActive
+      ? '<span class="badge badge-success">Aktif</span>'
+      : '<span class="badge badge-neutral">Non-Aktif</span>';
+
+    rows += `
+      <tr>
+        <td class="text-mono text-sm">${Utils.escapeHtml(b.buyer_id)}</td>
+        <td>
+          <div style="font-weight:600;">${Utils.escapeHtml(b.buyer_name)}</div>
+          <div class="text-sm text-muted">${Utils.escapeHtml(b.company || '-')}</div>
+        </td>
+        <td class="text-sm">${Utils.escapeHtml(b.country || '-')}</td>
+        <td class="text-sm">
+          ${b.contact ? Utils.escapeHtml(b.contact) : '-'}
+          ${b.email ? `<div class="text-muted">${Utils.escapeHtml(b.email)}</div>` : ''}
+        </td>
+        <td class="text-sm text-muted">
+          ${usage.total > 0
+            ? `${usage.requests} request &middot; ${usage.dcps} DCP &middot; ${usage.mcps} MCP`
+            : 'Belum ada transaksi'}
+        </td>
+        <td>${statusBadge}</td>
+        <td class="text-right">
+          <button class="btn btn-secondary btn-sm" onclick="openEditModal('${Utils.escapeHtml(b.buyer_id)}')" title="Edit">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="deleteBuyer('${Utils.escapeHtml(b.buyer_id)}')" title="Hapus">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }
+
+  Utils.setHtml('tableWrap', `
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Buyer ID</th>
+            <th>Nama / Perusahaan</th>
+            <th>Negara</th>
+            <th>Kontak</th>
+            <th>Aktivitas</th>
+            <th>Status</th>
+            <th class="text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `);
+}
+
+/* ============================================================
+ * MODAL
+ * ============================================================ */
+function openAddModal() {
+  editingBuyerId = null;
+  Utils.setText('modalTitle', 'Tambah Buyer Baru');
+  Utils.el('fBuyerId').value = '(Auto)';
+  Utils.el('fBuyerName').value = '';
+  Utils.el('fCompany').value = '';
+  Utils.el('fCountry').value = '';
+  Utils.el('fContact').value = '';
+  Utils.el('fEmail').value = '';
+  Utils.el('fPhone').value = '';
+  Utils.el('fRemarks').value = '';
+  Utils.el('fActive').value = 'X';
+  Utils.show('modalForm');
+  setTimeout(() => Utils.el('fBuyerName').focus(), 100);
+}
+
+function openEditModal(buyerId) {
+  const b = DB.getBuyer(buyerId);
+  if (!b) return;
+  editingBuyerId = buyerId;
+  Utils.setText('modalTitle', `Edit Buyer: ${b.buyer_id}`);
+  Utils.el('fBuyerId').value = b.buyer_id;
+  Utils.el('fBuyerName').value = b.buyer_name || '';
+  Utils.el('fCompany').value = b.company || '';
+  Utils.el('fCountry').value = b.country || '';
+  Utils.el('fContact').value = b.contact || '';
+  Utils.el('fEmail').value = b.email || '';
+  Utils.el('fPhone').value = b.phone || '';
+  Utils.el('fRemarks').value = b.remarks || '';
+  Utils.el('fActive').value = b.is_active || 'X';
+  Utils.show('modalForm');
+}
+
+function closeModal() {
+  Utils.hide('modalForm');
+  editingBuyerId = null;
+}
+
+/* ============================================================
+ * SAVE
+ * ============================================================ */
+function saveBuyer() {
+  const buyerName = Utils.el('fBuyerName').value.trim();
+  const company = Utils.el('fCompany').value.trim();
+  const country = Utils.el('fCountry').value.trim().toUpperCase();
+  const contact = Utils.el('fContact').value.trim();
+  const email = Utils.el('fEmail').value.trim();
+  const phone = Utils.el('fPhone').value.trim();
+  const remarks = Utils.el('fRemarks').value.trim();
+  const isActive = Utils.el('fActive').value;
+
+  if (!buyerName) return Utils.toastWarning('Nama Buyer wajib diisi');
+  if (!company) return Utils.toastWarning('Perusahaan wajib diisi');
+  if (!country) return Utils.toastWarning('Negara wajib diisi');
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return Utils.toastWarning('Format email tidak valid');
+  }
+
+  if (editingBuyerId === null) {
+    /* CREATE — auto-generate ID */
+    const seq = DB.nextSeq(ID_PREFIX.BUYER);
+    const newId = Utils.generateId(ID_PREFIX.BUYER, seq);
+    const row = {
+      buyer_id: newId,
+      buyer_name: buyerName,
+      company: company,
+      country: country,
+      contact: contact,
+      email: email,
+      phone: phone,
+      is_active: isActive,
+      remarks: remarks,
+      created_at: Utils.now(),
+      created_by: Auth.getSession().user_id,
+    };
+    DB.insert('buyers', row);
+    DB.audit('BUYER', newId, 'CREATE', `Buat buyer ${buyerName} (${newId})`);
+    Utils.toastSuccess(`Buyer ${newId} berhasil dibuat`);
+  } else {
+    const old = DB.getBuyer(editingBuyerId);
+    DB.update('buyers', 'buyer_id', editingBuyerId, {
+      buyer_name: buyerName,
+      company: company,
+      country: country,
+      contact: contact,
+      email: email,
+      phone: phone,
+      is_active: isActive,
+      remarks: remarks,
+      changed_at: Utils.now(),
+      changed_by: Auth.getSession().user_id,
+    });
+    DB.audit('BUYER', editingBuyerId, 'UPDATE',
+      `Update buyer ${editingBuyerId}`,
+      `name=${old.buyer_name}, active=${old.is_active}`,
+      `name=${buyerName}, active=${isActive}`);
+    Utils.toastSuccess('Buyer berhasil diperbarui');
+  }
+
+  closeModal();
+  renderTable();
+}
+
+/* ============================================================
+ * DELETE
+ * ============================================================ */
+function deleteBuyer(buyerId) {
+  const b = DB.getBuyer(buyerId);
+  if (!b) return;
+  const usage = countUsage(buyerId);
+
+  if (usage.total > 0) {
+    return Utils.alertError(
+      'Tidak Bisa Dihapus',
+      `Buyer ini dipakai oleh: ${usage.users} user, ${usage.requests} request, ${usage.dcps} DCP, ${usage.mcps} MCP. Nonaktifkan saja (edit -> status: Non-Aktif).`
+    );
+  }
+
+  Utils.confirm(
+    `Hapus buyer ${b.buyer_name}?`,
+    'Buyer akan dihapus permanen dari sistem.',
+    'Ya, hapus'
+  ).then(res => {
+    if (!res.isConfirmed) return;
+    DB.delete('buyers', 'buyer_id', buyerId);
+    DB.audit('BUYER', buyerId, 'DELETE', `Hapus buyer ${b.buyer_name} (${buyerId})`);
+    Utils.toastSuccess('Buyer dihapus');
+    renderTable();
+  });
+}
+
+</script>
+</body>
+</html>

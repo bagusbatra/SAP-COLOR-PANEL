@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master User &mdash; Color Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="../assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main">
+    <div class="page-header" id="page-header"></div>
+
+    <div class="page-content">
+
+      <!-- Toolbar: Search + Add -->
+      <div class="card mb-4">
+        <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <input type="text" id="searchInput" class="form-control"
+              placeholder="Cari User ID, nama, email, atau NIK...">
+          </div>
+          <select id="filterRole" class="form-control" style="max-width:180px;">
+            <option value="">Semua Role</option>
+            <option value="SALES">Sales</option>
+            <option value="ADMIN">Admin</option>
+            <option value="QC">QC</option>
+            <option value="IT">IT</option>
+          </select>
+          <select id="filterActive" class="form-control" style="max-width:160px;">
+            <option value="">Semua Status</option>
+            <option value="X">Aktif</option>
+            <option value="N">Non-Aktif</option>
+          </select>
+          <button class="btn btn-primary" id="btnAdd">
+            <i class="fa-solid fa-plus"></i>
+            <span>Tambah User</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-users"></i>
+            Daftar User
+          </h3>
+          <span class="text-muted text-sm" id="totalInfo"></span>
+        </div>
+        <div id="tableWrap">
+          <div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuat...</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<!-- Modal Form (Add / Edit) -->
+<div id="modalForm" class="hidden" style="position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:12px;max-width:640px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="padding:20px 24px;border-bottom:1px solid var(--color-gray-200);display:flex;justify-content:space-between;align-items:center;">
+      <h3 style="margin:0;font-size:16px;font-weight:700;" id="modalTitle">Tambah User</h3>
+      <button class="btn btn-secondary btn-icon" onclick="closeModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div style="padding:24px;">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label form-label-required">User ID</label>
+          <input type="text" id="fUserId" class="form-control" maxlength="20" placeholder="Contoh: sales03">
+          <div class="form-help">Tidak bisa diubah setelah dibuat</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label form-label-required">NIK</label>
+          <input type="text" id="fNik" class="form-control" maxlength="16" placeholder="Contoh: KMI-S-003">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label form-label-required">Nama Lengkap</label>
+        <input type="text" id="fFullName" class="form-control" maxlength="50">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label form-label-required">Email</label>
+          <input type="email" id="fEmail" class="form-control" maxlength="80">
+        </div>
+        <div class="form-group">
+          <label class="form-label form-label-required">Password</label>
+          <input type="text" id="fPassword" class="form-control" maxlength="30" placeholder="Password login">
+          <div class="form-help">Di BSP nanti disimpan sebagai SHA256</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label form-label-required">Role</label>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;padding:10px;border:1px solid var(--color-gray-300);border-radius:8px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" value="SALES" class="fRole"> <span>SALES</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" value="ADMIN" class="fRole"> <span>ADMIN</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" value="QC" class="fRole"> <span>QC</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" value="IT" class="fRole"> <span>IT</span>
+          </label>
+        </div>
+        <div class="form-help">Bisa pilih lebih dari satu (multi-role)</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Buyer (khusus SALES)</label>
+          <select id="fBuyerId" class="form-control">
+            <option value="">- Tidak terkait buyer -</option>
+          </select>
+          <div class="form-help">Wajib diisi jika role SALES</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label form-label-required">Status</label>
+          <select id="fActive" class="form-control">
+            <option value="X">Aktif</option>
+            <option value="N">Non-Aktif</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid var(--color-gray-200);background:var(--color-gray-50);display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
+      <button class="btn btn-primary" onclick="saveUser()">
+        <i class="fa-solid fa-check"></i>
+        <span>Simpan</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/db.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/sidebar.js"></script>
+<script>
+
+let editingUserId = null;
+
+if (Auth.guard([ROLES.ADMIN, ROLES.IT])) {
+  Sidebar.render();
+  Sidebar.renderHeader('Master User', 'Kelola user, role, dan hak akses sistem');
+
+  populateBuyerDropdown();
+  renderTable();
+
+  Utils.el('searchInput').addEventListener('input', Utils.debounce(renderTable, 200));
+  Utils.el('filterRole').addEventListener('change', renderTable);
+  Utils.el('filterActive').addEventListener('change', renderTable);
+  Utils.el('btnAdd').addEventListener('click', openAddModal);
+}
+
+/* ============================================================
+ * TABLE RENDER
+ * ============================================================ */
+function renderTable() {
+  const q = Utils.el('searchInput').value.toLowerCase().trim();
+  const filterRole = Utils.el('filterRole').value;
+  const filterActive = Utils.el('filterActive').value;
+
+  let users = DB.all('users');
+
+  if (q) {
+    users = users.filter(u =>
+      (u.user_id || '').toLowerCase().includes(q) ||
+      (u.full_name || '').toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q) ||
+      (u.nik || '').toLowerCase().includes(q)
+    );
+  }
+  if (filterRole) {
+    users = users.filter(u => Utils.hasRole(u.role, filterRole));
+  }
+  if (filterActive) {
+    users = users.filter(u => (u.is_active || 'N') === filterActive);
+  }
+
+  Utils.setText('totalInfo', `${users.length} user`);
+
+  if (users.length === 0) {
+    Utils.setHtml('tableWrap', `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-user-slash"></i></div>
+        <div class="empty-state-title">Tidak ada user</div>
+        <div class="empty-state-text">Coba ubah filter atau tambah user baru.</div>
+      </div>
+    `);
+    return;
+  }
+
+  let rows = '';
+  for (const u of users) {
+    const roleBadges = String(u.role || '').split(',')
+      .map(r => r.trim()).filter(Boolean)
+      .map(r => `<span class="badge badge-info">${Utils.escapeHtml(r)}</span>`)
+      .join(' ');
+    const buyerName = u.buyer_id ? DB.getBuyerName(u.buyer_id) : '-';
+    const isActive = u.is_active === 'X';
+    const statusBadge = isActive
+      ? '<span class="badge badge-success">Aktif</span>'
+      : '<span class="badge badge-neutral">Non-Aktif</span>';
+
+    rows += `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="sidebar-user-avatar" style="width:32px;height:32px;background:var(--color-navy);font-size:12px;">
+              ${Utils.escapeHtml((u.full_name || '?').charAt(0).toUpperCase())}
+            </div>
+            <div>
+              <div style="font-weight:600;">${Utils.escapeHtml(u.full_name || '-')}</div>
+              <div class="text-mono text-sm text-muted">${Utils.escapeHtml(u.user_id)}</div>
+            </div>
+          </div>
+        </td>
+        <td>${roleBadges || '-'}</td>
+        <td>${Utils.escapeHtml(buyerName)}</td>
+        <td class="text-sm">${Utils.escapeHtml(u.email || '-')}</td>
+        <td class="text-sm text-mono">${Utils.escapeHtml(u.nik || '-')}</td>
+        <td>${statusBadge}</td>
+        <td class="text-right">
+          <button class="btn btn-secondary btn-sm" onclick="openEditModal('${Utils.escapeHtml(u.user_id)}')" title="Edit">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="deleteUser('${Utils.escapeHtml(u.user_id)}')" title="Hapus">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }
+
+  Utils.setHtml('tableWrap', `
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>Buyer</th>
+            <th>Email</th>
+            <th>NIK</th>
+            <th>Status</th>
+            <th class="text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `);
+}
+
+/* ============================================================
+ * DROPDOWN BUYER
+ * ============================================================ */
+function populateBuyerDropdown() {
+  const buyers = DB.all('buyers').filter(b => b.is_active === 'X');
+  let opts = '<option value="">- Tidak terkait buyer -</option>';
+  for (const b of buyers) {
+    opts += `<option value="${Utils.escapeHtml(b.buyer_id)}">${Utils.escapeHtml(b.buyer_name)}</option>`;
+  }
+  Utils.el('fBuyerId').innerHTML = opts;
+}
+
+/* ============================================================
+ * MODAL: OPEN ADD / EDIT
+ * ============================================================ */
+function openAddModal() {
+  editingUserId = null;
+  Utils.setText('modalTitle', 'Tambah User Baru');
+  Utils.el('fUserId').value = '';
+  Utils.el('fUserId').disabled = false;
+  Utils.el('fNik').value = '';
+  Utils.el('fFullName').value = '';
+  Utils.el('fEmail').value = '';
+  Utils.el('fPassword').value = '';
+  Utils.el('fBuyerId').value = '';
+  Utils.el('fActive').value = 'X';
+  Utils.qsa('.fRole').forEach(c => c.checked = false);
+  Utils.show('modalForm');
+  setTimeout(() => Utils.el('fUserId').focus(), 100);
+}
+
+function openEditModal(userId) {
+  const user = DB.getUser(userId);
+  if (!user) {
+    Utils.toastError('User tidak ditemukan');
+    return;
+  }
+  editingUserId = userId;
+  Utils.setText('modalTitle', `Edit User: ${user.user_id}`);
+  Utils.el('fUserId').value = user.user_id;
+  Utils.el('fUserId').disabled = true; // PK tidak boleh diubah
+  Utils.el('fNik').value = user.nik || '';
+  Utils.el('fFullName').value = user.full_name || '';
+  Utils.el('fEmail').value = user.email || '';
+  Utils.el('fPassword').value = user.password || '';
+  Utils.el('fBuyerId').value = user.buyer_id || '';
+  Utils.el('fActive').value = user.is_active || 'X';
+
+  const roles = String(user.role || '').split(',').map(r => r.trim()).filter(Boolean);
+  Utils.qsa('.fRole').forEach(c => c.checked = roles.includes(c.value));
+
+  Utils.show('modalForm');
+}
+
+function closeModal() {
+  Utils.hide('modalForm');
+  editingUserId = null;
+}
+
+/* ============================================================
+ * SAVE
+ * ============================================================ */
+function saveUser() {
+  const userId = Utils.el('fUserId').value.trim();
+  const nik = Utils.el('fNik').value.trim();
+  const fullName = Utils.el('fFullName').value.trim();
+  const email = Utils.el('fEmail').value.trim();
+  const password = Utils.el('fPassword').value;
+  const buyerId = Utils.el('fBuyerId').value;
+  const isActive = Utils.el('fActive').value;
+  const selectedRoles = Utils.qsa('.fRole:checked').map(c => c.value);
+
+  /* Validation */
+  if (!userId) return Utils.toastWarning('User ID wajib diisi');
+  if (!/^[a-zA-Z0-9_]+$/.test(userId)) return Utils.toastWarning('User ID hanya boleh huruf, angka, underscore');
+  if (!nik) return Utils.toastWarning('NIK wajib diisi');
+  if (!fullName) return Utils.toastWarning('Nama Lengkap wajib diisi');
+  if (!email) return Utils.toastWarning('Email wajib diisi');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Utils.toastWarning('Format email tidak valid');
+  if (!password) return Utils.toastWarning('Password wajib diisi');
+  if (selectedRoles.length === 0) return Utils.toastWarning('Pilih minimal 1 role');
+  if (selectedRoles.includes('SALES') && !buyerId) return Utils.toastWarning('Buyer wajib diisi untuk role SALES');
+
+  const roleStr = selectedRoles.join(',');
+
+  if (editingUserId === null) {
+    /* CREATE */
+    if (DB.getUser(userId)) {
+      return Utils.toastError('User ID sudah dipakai');
+    }
+    const row = {
+      user_id: userId,
+      password: password,
+      full_name: fullName,
+      role: roleStr,
+      buyer_id: buyerId,
+      email: email,
+      nik: nik,
+      is_active: isActive,
+      created_at: Utils.now(),
+      created_by: Auth.getSession().user_id,
+    };
+    DB.insert('users', row);
+    DB.audit('USER', userId, 'CREATE', `Buat user ${userId} (${fullName}) dengan role ${roleStr}`);
+    Utils.toastSuccess('User berhasil dibuat');
+  } else {
+    /* UPDATE */
+    const old = DB.getUser(editingUserId);
+    DB.update('users', 'user_id', editingUserId, {
+      password: password,
+      full_name: fullName,
+      role: roleStr,
+      buyer_id: buyerId,
+      email: email,
+      nik: nik,
+      is_active: isActive,
+      changed_at: Utils.now(),
+      changed_by: Auth.getSession().user_id,
+    });
+    DB.audit('USER', editingUserId, 'UPDATE',
+      `Update user ${editingUserId}`,
+      `role=${old.role}, active=${old.is_active}`,
+      `role=${roleStr}, active=${isActive}`);
+    Utils.toastSuccess('User berhasil diperbarui');
+  }
+
+  closeModal();
+  renderTable();
+}
+
+/* ============================================================
+ * DELETE
+ * ============================================================ */
+function deleteUser(userId) {
+  const session = Auth.getSession();
+  if (userId === session.user_id) {
+    return Utils.alertError('Tidak Bisa Dihapus', 'Anda tidak bisa menghapus akun yang sedang login.');
+  }
+  const user = DB.getUser(userId);
+  if (!user) return;
+
+  Utils.confirm(
+    `Hapus user ${user.full_name}?`,
+    'User akan dihapus permanen dari sistem.',
+    'Ya, hapus'
+  ).then(res => {
+    if (!res.isConfirmed) return;
+    DB.delete('users', 'user_id', userId);
+    DB.audit('USER', userId, 'DELETE', `Hapus user ${userId} (${user.full_name})`);
+    Utils.toastSuccess('User dihapus');
+    renderTable();
+  });
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1089 @@
+/* ============================================================
+ * Color Panel Prototype - Custom Styles
+ * Corporate Neutral Palette (Navy + White + Gray)
+ * ============================================================ */
+
+:root {
+  /* Primary — Navy */
+  --color-navy:       #1E3A8A;
+  --color-navy-dark:  #1E293B;
+  --color-navy-light: #3B4E9E;
+
+  /* Neutrals */
+  --color-white:      #FFFFFF;
+  --color-gray-50:    #F8FAFC;
+  --color-gray-100:   #F1F5F9;
+  --color-gray-200:   #E2E8F0;
+  --color-gray-300:   #CBD5E1;
+  --color-gray-400:   #94A3B8;
+  --color-gray-500:   #64748B;
+  --color-gray-600:   #475569;
+  --color-gray-700:   #334155;
+  --color-gray-800:   #1E293B;
+  --color-gray-900:   #0F172A;
+
+  /* Semantic */
+  --color-success:    #10B981;
+  --color-success-bg: #D1FAE5;
+  --color-warning:    #F59E0B;
+  --color-warning-bg: #FEF3C7;
+  --color-danger:     #EF4444;
+  --color-danger-bg:  #FEE2E2;
+  --color-info:       #3B82F6;
+  --color-info-bg:    #DBEAFE;
+
+  /* Layout */
+  --sidebar-width: 260px;
+  --header-height: 72px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
+}
+
+/* ============================================================
+ * BASE
+ * ============================================================ */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  color: var(--color-gray-800);
+  background: var(--color-gray-100);
+  line-height: 1.5;
+}
+
+.hidden { display: none !important; }
+
+/* ============================================================
+ * LAYOUT (Sidebar + Main)
+ * ============================================================ */
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  background: var(--color-navy-dark);
+  color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-brand-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--color-navy);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--color-white);
+}
+
+.sidebar-brand-title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.sidebar-brand-sub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 2px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 12px;
+  overflow-y: auto;
+}
+
+.sidebar-divider {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 16px 12px 8px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.sidebar-link i {
+  width: 18px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-white);
+}
+
+.sidebar-link.active {
+  background: var(--color-navy);
+  color: var(--color-white);
+  box-shadow: 0 2px 8px rgba(30, 58, 138, 0.4);
+}
+
+.sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.sidebar-user-avatar {
+  width: 36px;
+  height: 36px;
+  background: var(--color-navy);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--color-white);
+}
+
+.sidebar-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-role {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.sidebar-logout {
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.75);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s;
+}
+
+.sidebar-logout:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: var(--color-white);
+}
+
+/* Tombol Format Data — alat bantu uji coba, ADMIN & IT saja.
+   Sengaja dibuat lebih redup dari Logout supaya tidak menarik
+   tangan lebih dulu; warnanya baru menyala saat di-hover. */
+.sidebar-format {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 9px 12px;
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s;
+}
+
+.sidebar-format:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.6);
+  border-style: solid;
+  color: var(--color-white);
+}
+
+/* ---------- Main content ---------- */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.page-header {
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-gray-200);
+  padding: 20px 32px;
+}
+
+.page-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--color-gray-500);
+  margin: 4px 0 0;
+}
+
+.page-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.page-content {
+  flex: 1;
+  padding: 24px 32px;
+}
+
+/* ============================================================
+ * CARDS
+ * ============================================================ */
+
+.card {
+  background: var(--color-white);
+  border-radius: 12px;
+  border: 1px solid var(--color-gray-200);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.card-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-gray-200);
+  background: var(--color-gray-50);
+}
+
+/* ============================================================
+ * BUTTONS
+ * ============================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-navy);
+  color: var(--color-white);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-navy-light);
+}
+
+.btn-secondary {
+  background: var(--color-white);
+  color: var(--color-gray-700);
+  border-color: var(--color-gray-300);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-gray-50);
+}
+
+.btn-success {
+  background: var(--color-success);
+  color: var(--color-white);
+}
+.btn-success:hover:not(:disabled) { background: #059669; }
+
+.btn-danger {
+  background: var(--color-danger);
+  color: var(--color-white);
+}
+.btn-danger:hover:not(:disabled) { background: #DC2626; }
+
+.btn-warning {
+  background: var(--color-warning);
+  color: var(--color-white);
+}
+.btn-warning:hover:not(:disabled) { background: #D97706; }
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.btn-lg {
+  padding: 12px 24px;
+  font-size: 15px;
+}
+
+.btn-icon {
+  padding: 8px;
+  width: 32px;
+  height: 32px;
+}
+
+/* ============================================================
+ * FORMS
+ * ============================================================ */
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  margin-bottom: 6px;
+}
+
+.form-label-required::after {
+  content: ' *';
+  color: var(--color-danger);
+}
+
+.form-control {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--color-gray-300);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--color-gray-800);
+  background: var(--color-white);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--color-navy);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+.form-control:disabled,
+.form-control[readonly] {
+  background: var(--color-gray-100);
+  color: var(--color-gray-500);
+}
+
+.form-help {
+  font-size: 12px;
+  color: var(--color-gray-500);
+  margin-top: 4px;
+}
+
+textarea.form-control {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+/* ============================================================
+ * TABLE
+ * ============================================================ */
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table thead th {
+  text-align: left;
+  padding: 12px 16px;
+  background: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-gray-200);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-gray-600);
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-gray-100);
+  vertical-align: middle;
+}
+
+.table tbody tr:hover {
+  background: var(--color-gray-50);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-empty {
+  padding: 40px;
+  text-align: center;
+  color: var(--color-gray-400);
+  font-size: 13px;
+}
+
+/* ============================================================
+ * BADGES
+ * ============================================================ */
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.badge-success { background: var(--color-success-bg); color: #065F46; }
+.badge-warning { background: var(--color-warning-bg); color: #92400E; }
+.badge-danger  { background: var(--color-danger-bg);  color: #991B1B; }
+.badge-info    { background: var(--color-info-bg);    color: #1E40AF; }
+.badge-neutral { background: var(--color-gray-200);   color: var(--color-gray-700); }
+
+/* ============================================================
+ * STATS CARDS (Dashboard)
+ * ============================================================ */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.stat-icon-navy    { background: var(--color-info-bg);    color: var(--color-navy); }
+.stat-icon-success { background: var(--color-success-bg); color: var(--color-success); }
+.stat-icon-warning { background: var(--color-warning-bg); color: var(--color-warning); }
+.stat-icon-danger  { background: var(--color-danger-bg);  color: var(--color-danger); }
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-gray-900);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--color-gray-500);
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ============================================================
+ * LOGIN PAGE
+ * ============================================================ */
+
+.login-layout {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
+  padding: 20px;
+}
+
+.login-card {
+  background: var(--color-white);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+}
+
+.login-header {
+  padding: 32px 32px 24px;
+  text-align: center;
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.login-brand-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--color-navy);
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--color-white);
+  margin-bottom: 16px;
+}
+
+.login-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.login-subtitle {
+  font-size: 13px;
+  color: var(--color-gray-500);
+  margin: 4px 0 0;
+}
+
+.login-body {
+  padding: 24px 32px 32px;
+}
+
+.login-hint {
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: var(--color-gray-50);
+  border: 1px dashed var(--color-gray-300);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--color-gray-600);
+}
+
+.login-hint-title {
+  font-weight: 700;
+  color: var(--color-gray-700);
+  margin-bottom: 6px;
+}
+
+.login-hint code {
+  background: var(--color-white);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--color-navy);
+  border: 1px solid var(--color-gray-200);
+  cursor: pointer;
+}
+
+/* ============================================================
+ * PANEL GRID (untuk DCP/MCP detail — 15 slot)
+ * ============================================================ */
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.panel-tile {
+  background: var(--color-white);
+  border: 2px solid var(--color-gray-200);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.panel-tile:hover {
+  border-color: var(--color-navy);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.panel-tile-number {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.panel-tile-id {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-gray-800);
+  margin: 4px 0 8px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.panel-tile-status {
+  margin-top: 4px;
+}
+
+.panel-tile.status-NA { border-color: var(--color-gray-200); background: var(--color-gray-50); }
+.panel-tile.status-AK { border-color: var(--color-info); }
+.panel-tile.status-SB { border-color: var(--color-warning); }
+.panel-tile.status-AP { border-color: var(--color-success); background: #F0FDF4; }
+.panel-tile.status-RJ { border-color: var(--color-danger); background: #FEF2F2; }
+.panel-tile.status-OB { border-color: var(--color-gray-300); background: var(--color-gray-100); opacity: 0.6; }
+.panel-tile.status-DA { border-color: var(--color-info); }
+.panel-tile.status-BL { border-color: var(--color-gray-200); background: var(--color-gray-50); }
+
+/* ============================================================
+ * UTILITIES
+ * ============================================================ */
+
+.text-mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+.text-muted { color: var(--color-gray-500); }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.text-sm { font-size: 12px; }
+
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-4 { margin-bottom: 16px; }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.gap-2 { gap: 8px; }
+.gap-4 { gap: 16px; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+
+.color-swatch {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid var(--color-gray-300);
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* Empty state */
+.empty-state {
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  color: var(--color-gray-300);
+  margin-bottom: 12px;
+}
+
+.empty-state-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  margin-bottom: 4px;
+}
+
+.empty-state-text {
+  font-size: 13px;
+  color: var(--color-gray-500);
+}
+
+/* ============================================================
+ * FLOWCHART (halaman Alur Sistem)
+ * Warna node & panah ambil dari design token di :root — kalau
+ * palette berubah, diagram ikut berubah.
+ * ============================================================ */
+
+/* Wrapper: diagram lebar boleh scroll sendiri, body jangan */
+.fc-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.fc-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  min-width: 680px;   /* di bawah ini teks mulai tidak terbaca — biar scroll saja */
+}
+
+/* Judul sub-diagram (1a, 1b) di dalam satu section */
+.fc-step-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  margin: 0 16px 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+/* --- Node --- */
+.fc-node      { rx: 6; }
+.fc-node-sales   { fill: var(--color-info); }
+.fc-node-admin   { fill: var(--color-navy); }
+.fc-node-qc      { fill: var(--color-success); }
+.fc-node-system  { fill: var(--color-gray-600); }
+.fc-node-end     { fill: var(--color-gray-400); }
+.fc-node-danger  { fill: var(--color-danger); }
+.fc-node-warning { fill: var(--color-warning); }
+
+/* Node kosong (outline) untuk status pasif */
+.fc-node-idle {
+  fill: var(--color-white);
+  stroke: var(--color-gray-300);
+  stroke-width: 1.5;
+}
+
+/* Kotak keputusan */
+.fc-decision {
+  fill: var(--color-warning-bg);
+  stroke: var(--color-warning);
+  stroke-width: 1.5;
+}
+
+/* --- Teks --- */
+.fc-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--color-white);
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.fc-label-dark  { fill: var(--color-gray-800); }
+
+.fc-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  fill: var(--color-white);
+}
+
+.fc-code-dark { fill: var(--color-gray-700); }
+
+/* Keterangan di atas panah */
+.fc-note {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  fill: var(--color-gray-600);
+  text-anchor: middle;
+}
+
+.fc-note-danger  { fill: var(--color-danger); }
+.fc-note-success { fill: var(--color-success); }
+
+/* Label lajur swimlane */
+.fc-lane-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  fill: var(--color-gray-500);
+  dominant-baseline: middle;
+}
+
+.fc-lane-bg   { fill: var(--color-gray-50); }
+.fc-lane-line { stroke: var(--color-gray-200); stroke-width: 1; }
+
+/* --- Panah --- */
+.fc-arrow {
+  stroke: var(--color-gray-400);
+  stroke-width: 1.8;
+  fill: none;
+}
+
+.fc-arrow-danger  { stroke: var(--color-danger); }
+.fc-arrow-success { stroke: var(--color-success); }
+
+/* Panah putus-putus = jalur alternatif / lompat section */
+.fc-arrow-alt { stroke-dasharray: 5 4; }
+
+/* --- Legend --- */
+.fc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 12px 16px 0;
+  border-top: 1px solid var(--color-gray-200);
+  margin-top: 12px;
+}
+
+.fc-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--color-gray-600);
+}
+
+.fc-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.fc-legend-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: var(--color-gray-700);
+}
+
+/* --- Catatan aturan di bawah diagram --- */
+.fc-rules {
+  margin: 14px 16px 0;
+  padding: 12px 14px;
+  background: var(--color-gray-50);
+  border-left: 3px solid var(--color-navy);
+  border-radius: 0 6px 6px 0;
+}
+
+.fc-rules ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.fc-rules li {
+  font-size: 12.5px;
+  color: var(--color-gray-600);
+  margin-bottom: 4px;
+}
+
+.fc-rules li:last-child { margin-bottom: 0; }
+
+.fc-rules strong { color: var(--color-gray-800); }
+
+/* Penanda perbedaan penting */
+.fc-callout {
+  margin: 14px 16px 0;
+  padding: 12px 14px;
+  background: var(--color-warning-bg);
+  border-left: 3px solid var(--color-warning);
+  border-radius: 0 6px 6px 0;
+  font-size: 12.5px;
+  color: #78350F;
+}
+
+/* ============================================================
+ * FLOWCHART — TOOLTIP per node
+ * ============================================================ */
+
+/* Petunjuk di atas halaman bahwa node bisa di-hover */
+.fc-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--color-info-bg);
+  border: 1px solid #BFDBFE;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #1E40AF;
+}
+
+.fc-hint i {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Teks di dalam SVG tidak boleh menangkap pointer — kalau menangkap,
+   hover berkedip tiap kali kursor melewati label di atas node. */
+.fc-label,
+.fc-code,
+.fc-note,
+.fc-lane-label { pointer-events: none; }
+
+/* Node yang punya tooltip */
+.fc-hot { cursor: help; }
+
+.fc-hot:hover,
+.fc-hot:focus {
+  stroke: var(--color-navy);
+  stroke-width: 2.5;
+  outline: none;
+}
+
+/* Kotak tooltip — satu elemen dipakai ulang untuk semua node */
+.fc-tip {
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  max-width: 340px;
+  padding: 11px 13px;
+  background: var(--color-navy-dark);
+  color: var(--color-gray-100);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  font-size: 12px;
+  line-height: 1.45;
+  pointer-events: none;   /* jangan sampai tooltip sendiri memicu mouseout */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .12s ease;
+}
+
+.fc-tip.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.fc-tip-title {
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--color-white);
+  margin-bottom: 7px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.fc-tip-rows {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+}
+
+.fc-tip-rows dt {
+  font-weight: 600;
+  color: var(--color-gray-400);
+  white-space: nowrap;
+}
+
+.fc-tip-rows dd {
+  margin: 0;
+  color: var(--color-gray-100);
+}
+
+.fc-tip-code {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #93C5FD;
+}

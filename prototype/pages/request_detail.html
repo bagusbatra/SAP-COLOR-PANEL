@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detail Request &mdash; Color Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="../assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main">
+    <div class="page-header" id="page-header"></div>
+
+    <div class="page-content" id="content">
+      <div class="table-empty">
+        <i class="fa-solid fa-spinner fa-spin"></i> Memuat detail request...
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/db.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/biz.js"></script>
+<script src="../assets/js/sidebar.js"></script>
+<script>
+
+let currentRequestId = null;
+
+if (Auth.guard([ROLES.SALES, ROLES.ADMIN, ROLES.IT])) {
+  Sidebar.render();
+  currentRequestId = Utils.getParam('id');
+
+  if (!currentRequestId) {
+    Utils.alertError('Parameter Hilang', 'Request ID tidak ditemukan di URL.')
+      .then(() => Utils.redirect('pages/request_list.html'));
+  } else {
+    render();
+  }
+}
+
+function render() {
+  const req = DB.find('requests', 'request_id', currentRequestId);
+  if (!req) {
+    Sidebar.renderHeader('Detail Request', 'Not found');
+    Utils.setHtml('content', `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-file-circle-question"></i></div>
+        <div class="empty-state-title">Request tidak ditemukan</div>
+        <div class="empty-state-text">Request ID ${Utils.escapeHtml(currentRequestId)} tidak ada.</div>
+      </div>
+    `);
+    return;
+  }
+
+  const session = Auth.getSession();
+  const isSalesOnly = Auth.hasRole(ROLES.SALES) && !Auth.hasRole(ROLES.ADMIN) && !Auth.hasRole(ROLES.IT);
+  const canApprove = Auth.hasRole(ROLES.ADMIN) && req.status === REQ_STATUS.PENDING;
+
+  /* Sales guard: cuma bisa lihat request-nya sendiri */
+  if (isSalesOnly && req.sales_user !== session.user_id) {
+    Sidebar.renderHeader('Detail Request', 'Access denied');
+    Utils.setHtml('content', `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-ban"></i></div>
+        <div class="empty-state-title">Akses Ditolak</div>
+        <div class="empty-state-text">Anda hanya bisa lihat request Anda sendiri.</div>
+      </div>
+    `);
+    return;
+  }
+
+  Sidebar.renderHeader(`Request ${req.request_id}`, `SO ${req.so_number} — ${DB.getBuyerName(req.buyer_id)}`);
+
+  const so = DB.getSalesOrder(req.so_number);
+  const salesUser = DB.getUser(req.sales_user);
+  const approver = req.approved_by ? DB.getUser(req.approved_by) : null;
+
+  /* Kalau sudah approved, tampilkan DCP yang dibuat */
+  const linkedDcps = req.status === REQ_STATUS.APPROVED
+    ? DB.filter('dcp_headers', d => d.request_id === req.request_id)
+    : [];
+
+  /* Header actions */
+  let headerActions = `
+    <a href="request_list.html" class="btn btn-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Kembali
+    </a>
+  `;
+  if (canApprove) {
+    headerActions += `
+      <button class="btn btn-danger btn-sm" onclick="rejectRequest()">
+        <i class="fa-solid fa-times"></i> Reject
+      </button>
+      <button class="btn btn-success btn-sm" onclick="approveRequest()">
+        <i class="fa-solid fa-check"></i> Approve
+      </button>
+    `;
+  }
+  Utils.setHtml('page-header-actions', headerActions);
+
+  /* Info card */
+  let content = `
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+
+      <div>
+        <!-- Request Info -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fa-solid fa-info-circle"></i> Informasi Request
+            </h3>
+            ${Utils.reqBadge(req.status)}
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div>
+                <div class="text-sm text-muted">Request ID</div>
+                <div class="text-mono" style="font-weight:600;">${Utils.escapeHtml(req.request_id)}</div>
+              </div>
+              <div>
+                <div class="text-sm text-muted">SO Number</div>
+                <div class="text-mono">${Utils.escapeHtml(req.so_number)}</div>
+              </div>
+              <div>
+                <div class="text-sm text-muted">Buyer</div>
+                <div>${Utils.escapeHtml(DB.getBuyerName(req.buyer_id))}</div>
+              </div>
+              <div>
+                <div class="text-sm text-muted">Sales</div>
+                <div>${Utils.escapeHtml(salesUser ? salesUser.full_name : req.sales_user)}</div>
+              </div>
+              <div>
+                <div class="text-sm text-muted">Tanggal Request</div>
+                <div>${Utils.formatDate(req.request_date)}</div>
+              </div>
+              <div>
+                <div class="text-sm text-muted">Dibuat</div>
+                <div>${Utils.formatDateTime(req.created_at)}</div>
+              </div>
+              ${req.remarks ? `
+                <div style="grid-column:span 2;">
+                  <div class="text-sm text-muted">Catatan Sales</div>
+                  <div>${Utils.escapeHtml(req.remarks)}</div>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- SO Items -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fa-solid fa-list"></i> Material di SO
+            </h3>
+            <span class="text-muted text-sm">${so ? so.items.length : 0} item</span>
+          </div>
+          ${renderSoItems(so, req.status)}
+        </div>
+
+        ${linkedDcps.length > 0 ? renderLinkedDcps(linkedDcps) : ''}
+      </div>
+
+      <div>
+        ${renderTimeline(req, approver)}
+      </div>
+
+    </div>
+  `;
+
+  Utils.setHtml('content', content);
+}
+
+function renderSoItems(so, reqStatus) {
+  if (!so) return '<div class="table-empty">SO tidak ditemukan</div>';
+
+  let rows = '';
+  for (const item of so.items) {
+    const hasColor = DB.materialHasColorCode(item.matnr);
+    const mat = DB.getMaterial(item.matnr);
+
+    /* Kalau sudah approved, cari DCP yang dibuat untuk material ini */
+    let linkCell = '-';
+    if (reqStatus === REQ_STATUS.APPROVED) {
+      const dcp = DB.filter('dcp_headers', d =>
+        d.so_number === so.so_number && d.matnr === item.matnr).pop();
+      if (dcp) {
+        linkCell = `
+          <div class="text-mono text-sm" style="font-weight:600;">${Utils.escapeHtml(dcp.color_code)}</div>
+          <div class="text-mono text-sm text-muted">${Utils.escapeHtml(dcp.dcp_id)}</div>
+        `;
+      }
+    } else {
+      linkCell = hasColor
+        ? '<span class="badge badge-warning">Sudah ada Color Code</span>'
+        : '<span class="badge badge-success">Warna Baru</span>';
+    }
+
+    rows += `
+      <tr>
+        <td class="text-mono text-sm">${Utils.escapeHtml(item.so_item)}</td>
+        <td>
+          <div class="text-mono text-sm" style="font-weight:600;">${Utils.escapeHtml(item.matnr)}</div>
+          <div class="text-sm text-muted">${Utils.escapeHtml(mat ? mat.maktx : '-')}</div>
+        </td>
+        <td class="text-center">${item.menge} ${item.meins}</td>
+        <td>${linkCell}</td>
+      </tr>
+    `;
+  }
+  return `
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Material</th>
+            <th class="text-center">Qty</th>
+            <th>${reqStatus === REQ_STATUS.APPROVED ? 'DCP / Color Code' : 'Status'}</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderLinkedDcps(dcps) {
+  /* Sales tidak punya akses halaman DCP — tampilkan datanya saja,
+     tanpa tombol yang bakal kena "Akses Ditolak" di dcp_detail.html */
+  const canOpenDcp = Auth.hasAnyRole([ROLES.ADMIN, ROLES.QC, ROLES.IT]);
+
+  let rows = '';
+  for (const d of dcps) {
+    rows += `
+      <tr>
+        <td class="text-mono" style="font-weight:600;">${Utils.escapeHtml(d.dcp_id)}</td>
+        <td class="text-mono">${Utils.escapeHtml(d.color_code)}</td>
+        <td class="text-mono text-sm">${Utils.escapeHtml(d.matnr)}</td>
+        <td class="text-sm">${Utils.escapeHtml(d.maktx || '-')}</td>
+        <td class="text-center">${d.qty_total}</td>
+        <td>${Utils.dcpHdrBadge(d.status)}</td>
+        <td class="text-right">
+          ${canOpenDcp ? `<a href="dcp_detail.html?id=${encodeURIComponent(d.dcp_id)}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>` : ''}
+        </td>
+      </tr>
+    `;
+  }
+  return `
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fa-solid fa-flask"></i> DCP yang Dibuat
+        </h3>
+        <span class="text-muted text-sm">${dcps.length} DCP</span>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>DCP ID</th>
+              <th>Color Code</th>
+              <th>Material</th>
+              <th>Deskripsi</th>
+              <th class="text-center">Qty</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderTimeline(req, approver) {
+  let items = [];
+
+  items.push({
+    icon: 'fa-plus',
+    color: 'stat-icon-navy',
+    title: 'Request Dibuat',
+    time: req.created_at,
+    by: DB.getUser(req.sales_user)?.full_name || req.sales_user,
+  });
+
+  if (req.status === REQ_STATUS.APPROVED) {
+    items.push({
+      icon: 'fa-check',
+      color: 'stat-icon-success',
+      title: 'Di-approve oleh Admin',
+      time: req.approved_at,
+      by: approver ? approver.full_name : req.approved_by,
+    });
+  } else if (req.status === REQ_STATUS.REJECTED) {
+    items.push({
+      icon: 'fa-times',
+      color: 'stat-icon-danger',
+      title: 'Di-reject oleh Admin',
+      time: req.approved_at,
+      by: approver ? approver.full_name : req.approved_by,
+      note: req.reject_reason,
+    });
+  } else {
+    items.push({
+      icon: 'fa-hourglass-half',
+      color: 'stat-icon-warning',
+      title: 'Menunggu Approval Admin',
+      time: null,
+      by: null,
+    });
+  }
+
+  let html = '';
+  for (const it of items) {
+    html += `
+      <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--color-gray-100);">
+        <div class="stat-icon ${it.color}" style="width:36px;height:36px;font-size:14px;flex-shrink:0;">
+          <i class="fa-solid ${it.icon}"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:13px;">${it.title}</div>
+          ${it.time ? `<div class="text-sm text-muted">${Utils.formatDateTime(it.time)}</div>` : ''}
+          ${it.by ? `<div class="text-sm text-muted">oleh ${Utils.escapeHtml(it.by)}</div>` : ''}
+          ${it.note ? `<div style="margin-top:6px;padding:8px 10px;background:#FEE2E2;border-radius:6px;font-size:12px;color:#991B1B;">${Utils.escapeHtml(it.note)}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fa-solid fa-timeline"></i> Timeline
+        </h3>
+      </div>
+      <div class="card-body" style="padding:8px 20px;">
+        ${html}
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+ * APPROVE
+ * ============================================================ */
+function approveRequest() {
+  const req = DB.find('requests', 'request_id', currentRequestId);
+  if (!req) return;
+
+  const so = DB.getSalesOrder(req.so_number);
+  if (!so) return Utils.alertError('SO Error', 'SO tidak ditemukan di sistem');
+
+  const newMaterials = so.items.filter(item => !DB.materialHasColorCode(item.matnr));
+
+  Utils.confirm(
+    'Approve Request?',
+    `Sistem akan otomatis membuat:\n\n` +
+    `• ${newMaterials.length} Color Code baru\n` +
+    `• ${newMaterials.length} DCP Header\n` +
+    `• ${newMaterials.reduce((s, m) => s + m.menge, 0)} panel DCP (status non-aktif)\n\n` +
+    `Lanjutkan?`,
+    'Ya, approve'
+  ).then(res => {
+    if (!res.isConfirmed) return;
+
+    const result = Biz.approveRequest(currentRequestId);
+    if (!result.ok) {
+      return Utils.alertError('Gagal Approve', result.msg);
+    }
+
+    let list = result.dcps.map(d => `• ${d.dcp_id} — ${d.color_code} (${d.matnr})`).join('\n');
+    Utils.alertSuccess(
+      'Request Approved',
+      `${result.dcps.length} DCP berhasil dibuat:\n\n${list}`
+    ).then(() => render());
+  });
+}
+
+/* ============================================================
+ * REJECT
+ * ============================================================ */
+function rejectRequest() {
+  Utils.prompt(
+    'Reject Request?',
+    'Tulis alasan reject (buyer tidak jadi beli, dll)...',
+    'Alasan Reject'
+  ).then(res => {
+    if (!res.isConfirmed || !res.value) return;
+
+    const result = Biz.rejectRequest(currentRequestId, res.value);
+    if (!result.ok) {
+      return Utils.alertError('Gagal Reject', result.msg);
+    }
+
+    Utils.toastSuccess('Request di-reject');
+    render();
+  });
+}
+
+</script>
+</body>
+</html>

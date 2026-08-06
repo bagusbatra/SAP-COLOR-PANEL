@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Color Panel</title>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/auth.js"></script>
+<script>
+  /* Entry: redirect ke landing page kalau sudah login, ke login kalau belum */
+  window.addEventListener('DOMContentLoaded', function () {
+    if (Auth.isLoggedIn()) {
+      window.location.href = Auth.getLandingPage();
+    } else {
+      window.location.href = 'login.html';
+    }
+  });
+</script>
+</head>
+<body>
+<p style="padding:20px;font-family:sans-serif;color:#64748B;">Loading...</p>
+</body>
+</html>

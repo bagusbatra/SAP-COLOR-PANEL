@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard &mdash; Color Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main">
+
+    <div class="page-header" id="page-header"></div>
+
+    <div class="page-content">
+
+      <!-- STATS -->
+      <div class="stats-grid" id="stats"></div>
+
+      <!-- Recent activity -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            Aktivitas Terbaru
+          </h3>
+          <a href="pages/audit_log.html" class="btn btn-secondary btn-sm hidden" id="btnAuditAll">
+            Lihat Semua
+          </a>
+        </div>
+        <div id="recentActivity">
+          <div class="table-empty">
+            <i class="fa-solid fa-spinner fa-spin"></i> Memuat...
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/sidebar.js"></script>
+<script>
+  /* Guard: ADMIN, IT, QC boleh akses dashboard.
+     SALES akan diredirect ke request_list */
+  if (!Auth.guard([ROLES.ADMIN, ROLES.IT, ROLES.QC])) {
+    /* redirected */
+  } else {
+
+    const session = Auth.getSession();
+    Sidebar.render();
+    Sidebar.renderHeader(
+      `Selamat datang, ${session.full_name}`,
+      `Overview & aktivitas terbaru Color Panel Management`
+    );
+
+    /* Show "lihat semua audit" khusus IT */
+    if (Auth.hasRole(ROLES.IT)) {
+      Utils.show('btnAuditAll');
+    }
+
+    renderStats();
+    renderRecentActivity();
+
+  }
+
+  function renderStats() {
+    const requests = DB.all('requests');
+    const dcps = DB.all('dcp_headers');
+    const mcps = DB.all('mcp_headers');
+    const colors = DB.all('color_codes');
+
+    const openDcp = dcps.filter(d => d.status === DCP_HDR_STATUS.OPEN).length;
+    const openMcp = mcps.filter(m => m.status === MCP_HDR_STATUS.OPEN).length;
+    const pendingReq = requests.filter(r => r.status === REQ_STATUS.PENDING).length;
+
+    const html = `
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-warning"><i class="fa-solid fa-envelope-open-text"></i></div>
+        <div>
+          <div class="stat-value">${pendingReq}</div>
+          <div class="stat-label">Request Pending</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-navy"><i class="fa-solid fa-flask"></i></div>
+        <div>
+          <div class="stat-value">${openDcp}</div>
+          <div class="stat-label">DCP Open</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-success"><i class="fa-solid fa-box-archive"></i></div>
+        <div>
+          <div class="stat-value">${openMcp}</div>
+          <div class="stat-label">MCP Open</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-navy"><i class="fa-solid fa-palette"></i></div>
+        <div>
+          <div class="stat-value">${colors.length}</div>
+          <div class="stat-label">Color Code Aktif</div>
+        </div>
+      </div>
+    `;
+    Utils.setHtml('stats', html);
+  }
+
+  function renderRecentActivity() {
+    const logs = DB.all('audit_logs')
+      .sort((a, b) => (b.action_at || '').localeCompare(a.action_at || ''))
+      .slice(0, 10);
+
+    if (logs.length === 0) {
+      Utils.setHtml('recentActivity', `
+        <div class="empty-state">
+          <div class="empty-state-icon"><i class="fa-solid fa-inbox"></i></div>
+          <div class="empty-state-title">Belum ada aktivitas</div>
+          <div class="empty-state-text">Aktivitas sistem akan tampil di sini.</div>
+        </div>
+      `);
+      return;
+    }
+
+    let rows = '';
+    for (const log of logs) {
+      rows += `
+        <tr>
+          <td class="text-mono text-sm">${Utils.escapeHtml(log.ref_id || '-')}</td>
+          <td>
+            <span class="badge badge-info">${Utils.escapeHtml(log.action)}</span>
+          </td>
+          <td>${Utils.escapeHtml(log.description || '-')}</td>
+          <td class="text-muted text-sm">${Utils.escapeHtml(log.action_by_name || log.action_by)}</td>
+          <td class="text-muted text-sm">${Utils.formatDateTime(log.action_at)}</td>
+        </tr>
+      `;
+    }
+
+    Utils.setHtml('recentActivity', `
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Ref ID</th>
+              <th>Aksi</th>
+              <th>Deskripsi</th>
+              <th>Oleh</th>
+              <th>Waktu</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `);
+  }
+</script>
+
+</body>
+</html>

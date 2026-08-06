@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Renewal MCP &mdash; Color Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="../assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="page-header" id="page-header"></div>
+    <div class="page-content">
+
+      <!-- Info card -->
+      <div class="card mb-4" style="background:linear-gradient(135deg,#1E3A8A 0%,#3B4E9E 100%);color:#fff;border:none;">
+        <div class="card-body" style="display:flex;align-items:center;gap:16px;">
+          <div style="width:48px;height:48px;background:rgba(255,255,255,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:14px;margin-bottom:2px;">Renewal MCP</div>
+            <div style="font-size:12px;opacity:0.9;line-height:1.5;">
+              Halaman khusus untuk memperbarui MCP yang expired atau menjelang expired.
+              Sales harus siapkan SO baru dulu dengan material color yang <strong>sudah punya Color Code</strong>.
+              Sistem akan otomatis membuat MCP baru dan meng-obsolete MCP lama.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;">
+
+        <!-- KIRI: Input SO -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-file-invoice"></i> Input SO Renewal</h3>
+          </div>
+          <div class="card-body">
+
+            <div class="form-group">
+              <label class="form-label form-label-required">Pilih SO Renewal</label>
+              <select id="fSoNumber" class="form-control">
+                <option value="">- Pilih SO -</option>
+              </select>
+              <div class="form-help">SO yang materialnya sudah punya Color Code (Renewal). Untuk material baru → gunakan Request DCP.</div>
+            </div>
+
+            <button class="btn btn-primary" id="btnCheck" style="width:100%;" disabled>
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <span>Cek Kandidat Renewal</span>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- KANAN: Hasil scan -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-list-check"></i> Kandidat Renewal</h3>
+          </div>
+          <div id="candidateArea">
+            <div class="empty-state">
+              <div class="empty-state-icon"><i class="fa-solid fa-hand-pointer"></i></div>
+              <div class="empty-state-title">Pilih SO dulu</div>
+              <div class="empty-state-text">Sistem akan tampilkan MCP mana yang bisa di-renewal.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/db.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/biz.js"></script>
+<script src="../assets/js/sidebar.js"></script>
+<script>
+
+let lastCheckResult = null;
+
+if (Auth.guard([ROLES.ADMIN, ROLES.IT])) {
+  Sidebar.render();
+  Sidebar.renderHeader('Renewal MCP', 'Perbarui Master Color Panel dengan SO baru');
+  populateSoDropdown();
+
+  Utils.el('fSoNumber').addEventListener('change', function () {
+    Utils.el('btnCheck').disabled = !this.value;
+    Utils.setHtml('candidateArea', `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-hand-pointer"></i></div>
+        <div class="empty-state-title">Klik "Cek Kandidat Renewal"</div>
+      </div>
+    `);
+  });
+
+  Utils.el('btnCheck').addEventListener('click', checkCandidates);
+}
+
+/* SO yang belum di-import sebelumnya */
+function populateSoDropdown() {
+  const sos = DB.all('sales_orders');
+  const select = Utils.el('fSoNumber');
+  let opts = '<option value="">- Pilih SO -</option>';
+  for (const s of sos) {
+    /* Skip SO yang semua materialnya sudah di-import lengkap */
+    const allImported = s.items.every(item => DB.soAlreadyImported(s.so_number, item.matnr));
+    if (allImported) continue;
+    opts += `<option value="${Utils.escapeHtml(s.so_number)}">${Utils.escapeHtml(s.so_number)} — ${Utils.escapeHtml(DB.getBuyerName(s.buyer_id))}</option>`;
+  }
+  select.innerHTML = opts;
+}
+
+function checkCandidates() {
+  const soNumber = Utils.el('fSoNumber').value;
+  if (!soNumber) return;
+
+  const result = Biz.findRenewalCandidate(soNumber);
+  if (!result.ok) return Utils.alertError('Error', result.msg);
+
+  lastCheckResult = result;
+
+  const renewable = result.results.filter(r => r.status === 'renewable');
+  const skipped = result.results.filter(r => r.status !== 'renewable');
+
+  let content = `
+    <div class="card-body">
+
+      <div style="padding:12px;background:var(--color-gray-50);border-radius:8px;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:13px;">
+          <div><span class="text-muted">SO:</span> <strong class="text-mono">${Utils.escapeHtml(result.so.so_number)}</strong></div>
+          <div><span class="text-muted">Buyer:</span> ${Utils.escapeHtml(DB.getBuyerName(result.so.buyer_id))}</div>
+          <div><span class="text-muted">Tanggal:</span> ${Utils.formatDate(result.so.so_date)}</div>
+        </div>
+      </div>
+  `;
+
+  if (renewable.length > 0) {
+    content += `
+      <div class="form-label mb-2">Pilih material yang mau di-renewal (${renewable.length} kandidat):</div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width:32px;">
+                <input type="checkbox" id="chkAll" checked onchange="toggleAll(this)">
+              </th>
+              <th>Material</th>
+              <th>Color Code</th>
+              <th>MCP Lama</th>
+              <th class="text-center">Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+    renewable.forEach((m, idx) => {
+      const oldExp = m.old_mcp.expire_date ? Utils.formatDate(m.old_mcp.expire_date) : '-';
+      content += `
+        <tr>
+          <td><input type="checkbox" class="chkMat" data-idx="${idx}" checked></td>
+          <td>
+            <div class="text-mono text-sm" style="font-weight:600;">${Utils.escapeHtml(m.matnr)}</div>
+            <div class="text-sm text-muted">${Utils.escapeHtml(m.maktx)}</div>
+          </td>
+          <td class="text-mono text-sm">${Utils.escapeHtml(m.color_code)}</td>
+          <td>
+            <div class="text-mono text-sm">${Utils.escapeHtml(m.old_mcp.mcp_id)}</div>
+            <div class="text-sm text-muted">Exp: ${oldExp}</div>
+          </td>
+          <td class="text-center">${m.menge} ${m.meins}</td>
+        </tr>
+      `;
+    });
+    content += `
+          </tbody>
+        </table>
+      </div>
+
+      <div style="padding:12px;background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;font-size:12px;color:#78350F;margin-top:16px;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <strong>Yang akan terjadi saat submit:</strong>
+        <ul style="margin:6px 0 0 0;padding-left:18px;">
+          <li>MCP lama & semua panelnya menjadi <strong>OBSOLETE</strong></li>
+          <li>MCP baru dibuat dengan Color Code sama, expired direset 1 tahun</li>
+          <li>15 slot MCP baru status <strong>BLANK</strong> — admin isi manual (bukan dari DCP)</li>
+        </ul>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+        <button class="btn btn-primary btn-lg" onclick="executeRenewal()">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          <span>Execute Renewal</span>
+        </button>
+      </div>
+    `;
+  }
+
+  if (skipped.length > 0) {
+    content += `
+      <div class="mt-4">
+        <div class="form-label mb-2">Material yang di-skip (${skipped.length}):</div>
+        <div class="table-wrap">
+          <table class="table" style="font-size:12px;">
+            <thead>
+              <tr><th>Material</th><th>Alasan</th></tr>
+            </thead>
+            <tbody>
+              ${skipped.map(m => `
+                <tr>
+                  <td>
+                    <div class="text-mono">${Utils.escapeHtml(m.matnr)}</div>
+                    <div class="text-sm text-muted">${Utils.escapeHtml(m.maktx || '-')}</div>
+                  </td>
+                  <td>
+                    <span class="badge badge-warning">${m.status === 'no_color_code' ? 'Belum ada Color Code' : 'Belum ada MCP aktif'}</span>
+                    <div class="text-sm text-muted mt-2">${Utils.escapeHtml(m.note)}</div>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  if (renewable.length === 0 && skipped.length === 0) {
+    content += `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-face-frown"></i></div>
+        <div class="empty-state-title">SO tidak berisi material apapun</div>
+      </div>
+    `;
+  } else if (renewable.length === 0) {
+    content += `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-ban"></i></div>
+        <div class="empty-state-title">Tidak ada material yang bisa di-renewal</div>
+        <div class="empty-state-text">
+          Untuk material yang belum punya Color Code, gunakan <strong>Request DCP</strong>.
+        </div>
+      </div>
+    `;
+  }
+
+  content += `</div>`;
+  Utils.setHtml('candidateArea', content);
+}
+
+function toggleAll(checkbox) {
+  Utils.qsa('.chkMat').forEach(c => c.checked = checkbox.checked);
+}
+
+function executeRenewal() {
+  if (!lastCheckResult) return;
+  const renewable = lastCheckResult.results.filter(r => r.status === 'renewable');
+  const selectedIdx = Utils.qsa('.chkMat:checked').map(c => parseInt(c.dataset.idx));
+
+  if (selectedIdx.length === 0) {
+    return Utils.toastWarning('Pilih minimal 1 material untuk di-renewal');
+  }
+
+  const selected = selectedIdx.map(i => renewable[i]);
+
+  Utils.confirm(
+    'Execute Renewal?',
+    `${selected.length} material akan di-renewal.\n\nMCP lama menjadi OBSOLETE, MCP baru dibuat dengan expired 1 tahun.\n\nLanjutkan?`,
+    'Ya, execute'
+  ).then(r => {
+    if (!r.isConfirmed) return;
+
+    const res = Biz.executeRenewal(lastCheckResult.so.so_number, selected);
+    if (!res.ok) return Utils.alertError('Gagal Renewal', res.msg);
+
+    const list = res.created.map(c =>
+      `• ${c.old_mcp_id} → <strong class="text-mono">${c.new_mcp_id}</strong> (${c.matnr})`).join('<br>');
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Renewal Berhasil',
+      html: `<div style="text-align:left;font-size:13px;">${list}</div>`,
+      confirmButtonColor: '#1E3A8A',
+    }).then(() => Utils.redirect('pages/mcp_list.html'));
+  });
+}
+</script>
+</body>
+</html>

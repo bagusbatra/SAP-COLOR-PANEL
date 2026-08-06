@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Request DCP &mdash; Color Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="../assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main">
+    <div class="page-header" id="page-header"></div>
+
+    <div class="page-content">
+
+      <!-- Stats mini -->
+      <div class="stats-grid" id="stats"></div>
+
+      <!-- Toolbar -->
+      <div class="card mb-4">
+        <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <input type="text" id="searchInput" class="form-control"
+              placeholder="Cari Request ID, SO, atau buyer...">
+          </div>
+          <select id="filterStatus" class="form-control" style="max-width:180px;">
+            <option value="">Semua Status</option>
+            <option value="P">Pending</option>
+            <option value="A">Approved</option>
+            <option value="R">Rejected</option>
+          </select>
+          <a href="request_form.html" class="btn btn-primary" id="btnNew">
+            <i class="fa-solid fa-plus"></i>
+            <span>Request Baru</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-envelope-open-text"></i>
+            Daftar Request DCP
+          </h3>
+          <span class="text-muted text-sm" id="totalInfo"></span>
+        </div>
+        <div id="tableWrap">
+          <div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuat...</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/db.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/biz.js"></script>
+<script src="../assets/js/sidebar.js"></script>
+<script>
+
+if (Auth.guard([ROLES.SALES, ROLES.ADMIN, ROLES.IT])) {
+  const session = Auth.getSession();
+  const isSalesOnly = Auth.hasRole(ROLES.SALES) && !Auth.hasRole(ROLES.ADMIN) && !Auth.hasRole(ROLES.IT);
+
+  Sidebar.render();
+  Sidebar.renderHeader(
+    'Request DCP',
+    isSalesOnly
+      ? 'Ajukan request pembuatan DCP baru berdasarkan SO'
+      : 'Kelola & approve request DCP dari Sales'
+  );
+
+  renderStats();
+  renderTable();
+
+  Utils.el('searchInput').addEventListener('input', Utils.debounce(renderTable, 200));
+  Utils.el('filterStatus').addEventListener('change', renderTable);
+}
+
+function getVisibleRequests() {
+  const session = Auth.getSession();
+  const isSalesOnly = Auth.hasRole(ROLES.SALES) && !Auth.hasRole(ROLES.ADMIN) && !Auth.hasRole(ROLES.IT);
+
+  let requests = DB.all('requests');
+  if (isSalesOnly) {
+    /* Sales hanya lihat request-nya sendiri */
+    requests = requests.filter(r => r.sales_user === session.user_id);
+  }
+  return requests;
+}
+
+function renderStats() {
+  const requests = getVisibleRequests();
+  const pending = requests.filter(r => r.status === REQ_STATUS.PENDING).length;
+  const approved = requests.filter(r => r.status === REQ_STATUS.APPROVED).length;
+  const rejected = requests.filter(r => r.status === REQ_STATUS.REJECTED).length;
+
+  Utils.setHtml('stats', `
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-warning"><i class="fa-solid fa-hourglass-half"></i></div>
+      <div>
+        <div class="stat-value">${pending}</div>
+        <div class="stat-label">Pending Approval</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-success"><i class="fa-solid fa-check-circle"></i></div>
+      <div>
+        <div class="stat-value">${approved}</div>
+        <div class="stat-label">Approved</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-danger"><i class="fa-solid fa-times-circle"></i></div>
+      <div>
+        <div class="stat-value">${rejected}</div>
+        <div class="stat-label">Rejected</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-navy"><i class="fa-solid fa-envelope-open-text"></i></div>
+      <div>
+        <div class="stat-value">${requests.length}</div>
+        <div class="stat-label">Total Request</div>
+      </div>
+    </div>
+  `);
+}
+
+function renderTable() {
+  const q = Utils.el('searchInput').value.toLowerCase().trim();
+  const filterStatus = Utils.el('filterStatus').value;
+
+  let requests = getVisibleRequests();
+
+  if (q) {
+    requests = requests.filter(r =>
+      (r.request_id || '').toLowerCase().includes(q) ||
+      (r.so_number || '').toLowerCase().includes(q) ||
+      DB.getBuyerName(r.buyer_id).toLowerCase().includes(q)
+    );
+  }
+  if (filterStatus) requests = requests.filter(r => r.status === filterStatus);
+
+  /* Sort: pending dulu, lalu terbaru */
+  requests.sort((a, b) => {
+    if (a.status === REQ_STATUS.PENDING && b.status !== REQ_STATUS.PENDING) return -1;
+    if (b.status === REQ_STATUS.PENDING && a.status !== REQ_STATUS.PENDING) return 1;
+    return (b.created_at || '').localeCompare(a.created_at || '');
+  });
+
+  Utils.setText('totalInfo', `${requests.length} request`);
+
+  if (requests.length === 0) {
+    Utils.setHtml('tableWrap', `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-inbox"></i></div>
+        <div class="empty-state-title">Belum ada request</div>
+        <div class="empty-state-text">Klik "Request Baru" untuk memulai.</div>
+      </div>
+    `);
+    return;
+  }
+
+  let rows = '';
+  for (const r of requests) {
+    const so = DB.getSalesOrder(r.so_number);
+    const materialCount = so ? so.items.length : 0;
+    const salesUser = DB.getUser(r.sales_user);
+    const salesName = salesUser ? salesUser.full_name : r.sales_user;
+
+    rows += `
+      <tr>
+        <td class="text-mono" style="font-weight:700;">${Utils.escapeHtml(r.request_id)}</td>
+        <td class="text-mono">${Utils.escapeHtml(r.so_number)}</td>
+        <td>
+          <div>${Utils.escapeHtml(DB.getBuyerName(r.buyer_id))}</div>
+          <div class="text-sm text-muted">${materialCount} material</div>
+        </td>
+        <td class="text-sm">${Utils.escapeHtml(salesName)}</td>
+        <td class="text-sm">${Utils.formatDate(r.request_date)}</td>
+        <td>${Utils.reqBadge(r.status)}</td>
+        <td class="text-right">
+          <a href="request_detail.html?id=${encodeURIComponent(r.request_id)}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-eye"></i> Detail
+          </a>
+        </td>
+      </tr>
+    `;
+  }
+
+  Utils.setHtml('tableWrap', `
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>SO Number</th>
+            <th>Buyer</th>
+            <th>Sales</th>
+            <th>Tanggal</th>
+            <th>Status</th>
+            <th class="text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `);
+}
+
+</script>
+</body>
+</html>

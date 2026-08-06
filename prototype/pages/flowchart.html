@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alur Sistem &mdash; Color Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="../assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="page-header" id="page-header"></div>
+    <div class="page-content">
+
+      <div class="fc-hint">
+        <i class="fa-solid fa-hand-pointer"></i>
+        <div>
+          Arahkan kursor ke kotak mana pun di diagram untuk melihat pelaku, syarat, efek ke data,
+          dan fungsi <span class="text-mono">biz.js</span> yang menanganinya. Di layar sentuh, ketuk kotaknya.
+        </div>
+      </div>
+
+      <!-- ============================================================
+           SECTION 1 — Alur End-to-End, dipecah 2 tahap supaya
+           tiap aksi tetap berada di lajur pelakunya
+           ============================================================ -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-diagram-project"></i>
+            1. Alur End-to-End
+          </h3>
+          <span class="text-muted text-sm">SO masuk &rarr; MCP released</span>
+        </div>
+        <div class="card-body">
+
+          <div class="fc-step-title">1a &mdash; Dari SO sampai DCP terbentuk</div>
+          <div class="fc-scroll">
+            <svg class="fc-svg" viewBox="0 0 1000 320" preserveAspectRatio="xMidYMid meet"
+                 role="img" aria-label="Alur dari input SO sampai DCP terbentuk">
+              <defs>
+                <marker id="a1" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-gray-400)"/>
+                </marker>
+                <marker id="a1d" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-danger)"/>
+                </marker>
+                <marker id="a1s" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-success)"/>
+                </marker>
+              </defs>
+
+              <!-- Lajur -->
+              <rect class="fc-lane-bg" x="100" y="30" width="890" height="90"/>
+              <rect class="fc-lane-bg" x="100" y="210" width="890" height="90"/>
+              <line class="fc-lane-line" x1="100" y1="30"  x2="990" y2="30"/>
+              <line class="fc-lane-line" x1="100" y1="120" x2="990" y2="120"/>
+              <line class="fc-lane-line" x1="100" y1="210" x2="990" y2="210"/>
+              <line class="fc-lane-line" x1="100" y1="300" x2="990" y2="300"/>
+              <line class="fc-lane-line" x1="100" y1="30"  x2="100" y2="300"/>
+              <text class="fc-lane-label" x="10" y="75">SALES</text>
+              <text class="fc-lane-label" x="10" y="165">ADMIN</text>
+              <text class="fc-lane-label" x="10" y="255">SISTEM</text>
+
+              <!-- SALES -->
+              <rect class="fc-node fc-node-sales fc-hot" id="n-input-so" tabindex="0"
+                    x="110" y="54" width="110" height="42"/>
+              <text class="fc-label" x="165" y="69">Input nomor SO</text>
+              <text class="fc-note" x="165" y="84" style="fill:var(--color-gray-100);">+ remarks</text>
+
+              <path class="fc-arrow" d="M220,75 L256,75" marker-end="url(#a1)"/>
+
+              <rect class="fc-node fc-node-sales fc-hot" id="n-req-created" tabindex="0"
+                    x="260" y="54" width="110" height="42"/>
+              <text class="fc-label" x="315" y="69">Request dibuat</text>
+              <text class="fc-code" x="315" y="84">P &middot; Pending</text>
+
+              <path class="fc-arrow" d="M315,96 L315,131" marker-end="url(#a1)"/>
+
+              <!-- ADMIN: review -->
+              <path class="fc-decision fc-hot" id="n-review-admin" tabindex="0"
+                    d="M315,135 L385,165 L315,195 L245,165 z"/>
+              <text class="fc-label fc-label-dark" x="315" y="161">Review</text>
+              <text class="fc-note" x="315" y="175">Admin</text>
+
+              <!-- reject -->
+              <path class="fc-arrow fc-arrow-danger" d="M245,165 L219,165" marker-end="url(#a1d)"/>
+              <text class="fc-note fc-note-danger" x="232" y="156">reject</text>
+              <rect class="fc-node fc-node-end fc-hot" id="n-req-rejected" tabindex="0"
+                    x="105" y="144" width="110" height="42"/>
+              <text class="fc-label" x="160" y="159">Request</text>
+              <text class="fc-code" x="160" y="174">R &middot; Rejected</text>
+
+              <!-- approve -->
+              <path class="fc-arrow fc-arrow-success" d="M385,165 L416,165" marker-end="url(#a1s)"/>
+              <text class="fc-note fc-note-success" x="400" y="156">approve</text>
+
+              <!-- validasi -->
+              <path class="fc-decision fc-hot" id="n-validasi-color" tabindex="0"
+                    d="M505,133 L590,165 L505,197 L420,165 z"/>
+              <text class="fc-label fc-label-dark" x="505" y="159">Material sudah punya</text>
+              <text class="fc-label fc-label-dark" x="505" y="173">Color Code?</text>
+
+              <!-- ya -> renewal -->
+              <path class="fc-arrow fc-arrow-alt" d="M505,197 L505,231" marker-end="url(#a1)"/>
+              <text class="fc-note" x="522" y="216">ya</text>
+              <rect class="fc-node fc-node-end fc-hot" id="n-tolak-renewal" tabindex="0"
+                    x="415" y="233" width="180" height="44"/>
+              <text class="fc-label" x="505" y="248">Ditolak &mdash; pakai</text>
+              <text class="fc-label" x="505" y="262">halaman Renewal (bagian 4)</text>
+
+              <!-- tidak -> generate -->
+              <path class="fc-arrow" d="M590,165 L622,165 L622,255 L666,255" marker-end="url(#a1)"/>
+              <text class="fc-note" x="606" y="156">tidak</text>
+
+              <rect class="fc-node fc-node-system fc-hot" id="n-auto-generate" tabindex="0"
+                    x="670" y="231" width="200" height="48"/>
+              <text class="fc-label" x="770" y="245">Per item SO, otomatis:</text>
+              <text class="fc-note" x="770" y="259" style="fill:var(--color-gray-200);">Color Code KW##### + DCP header</text>
+              <text class="fc-note" x="770" y="271" style="fill:var(--color-gray-200);">+ panel sebanyak qty item SO</text>
+
+              <path class="fc-arrow fc-arrow-success" d="M870,255 L930,255" marker-end="url(#a1s)"/>
+              <text class="fc-note fc-note-success" x="940" y="248">DCP siap</text>
+              <text class="fc-note fc-note-success" x="940" y="262">(bagian 1b)</text>
+            </svg>
+          </div>
+
+          <div class="fc-step-title" style="margin-top:26px;">1b &mdash; Siklus DCP sampai MCP released</div>
+          <div class="fc-scroll">
+            <svg class="fc-svg" viewBox="0 0 1000 320" preserveAspectRatio="xMidYMid meet"
+                 role="img" aria-label="Siklus panel DCP sampai MCP released">
+              <defs>
+                <marker id="b1" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-gray-400)"/>
+                </marker>
+                <marker id="b1s" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-success)"/>
+                </marker>
+              </defs>
+
+              <rect class="fc-lane-bg" x="80" y="30" width="910" height="90"/>
+              <rect class="fc-lane-bg" x="80" y="210" width="910" height="90"/>
+              <line class="fc-lane-line" x1="80" y1="30"  x2="990" y2="30"/>
+              <line class="fc-lane-line" x1="80" y1="120" x2="990" y2="120"/>
+              <line class="fc-lane-line" x1="80" y1="210" x2="990" y2="210"/>
+              <line class="fc-lane-line" x1="80" y1="300" x2="990" y2="300"/>
+              <line class="fc-lane-line" x1="80" y1="30"  x2="80"  y2="300"/>
+              <text class="fc-lane-label" x="10" y="75">ADMIN</text>
+              <text class="fc-lane-label" x="10" y="165">QC</text>
+              <text class="fc-lane-label" x="10" y="255">SISTEM</text>
+
+              <!-- ADMIN: aktivasi -->
+              <rect class="fc-node fc-node-admin fc-hot" id="n-aktivasi" tabindex="0"
+                    x="90" y="54" width="120" height="42"/>
+              <text class="fc-label" x="150" y="69">Aktivasi panel</text>
+              <text class="fc-note" x="150" y="84" style="fill:var(--color-gray-200);">isi tgl manufaktur</text>
+
+              <path class="fc-arrow" d="M210,75 L236,75" marker-end="url(#b1)"/>
+
+              <rect class="fc-node fc-node-admin fc-hot" id="n-submit-dcp" tabindex="0"
+                    x="240" y="54" width="120" height="42"/>
+              <text class="fc-label" x="300" y="69">Submit panel</text>
+              <text class="fc-note" x="300" y="84" style="fill:var(--color-gray-200);" id="noteFoto">+ foto</text>
+
+              <path class="fc-arrow" d="M300,96 L300,141" marker-end="url(#b1)"/>
+
+              <!-- QC approve -->
+              <rect class="fc-node fc-node-qc fc-hot" id="n-approve-dcp" tabindex="0"
+                    x="240" y="144" width="120" height="42"/>
+              <text class="fc-label" x="300" y="159">Approve panel</text>
+              <text class="fc-code" x="300" y="174">SB &rarr; AP</text>
+
+              <!-- memicu MCP -->
+              <path class="fc-arrow fc-arrow-alt" d="M300,186 L300,229" marker-end="url(#b1)"/>
+              <rect class="fc-node fc-node-system fc-hot" id="n-mcp-autocreate" tabindex="0"
+                    x="200" y="231" width="210" height="44"/>
+              <text class="fc-label" x="305" y="246">MCP header + slot dibuat</text>
+              <text class="fc-note" x="305" y="261" style="fill:var(--color-gray-200);">saat panel pertama di-approve</text>
+
+              <!-- balik ke admin: close DCP -->
+              <path class="fc-arrow" d="M360,165 L480,165 L480,100" marker-end="url(#b1)"/>
+
+              <rect class="fc-node fc-node-admin fc-hot" id="n-close-dcp" tabindex="0"
+                    x="420" y="54" width="120" height="42"/>
+              <text class="fc-label" x="480" y="69">Close DCP</text>
+              <text class="fc-code" x="480" y="84">O &rarr; C</text>
+
+              <path class="fc-arrow" d="M540,75 L571,75" marker-end="url(#b1)"/>
+
+              <rect class="fc-node fc-node-sales fc-hot" id="n-siklus-mcp" tabindex="0"
+                    x="575" y="54" width="130" height="42"/>
+              <text class="fc-label" x="640" y="69">Siklus panel MCP</text>
+              <text class="fc-note" x="640" y="84" style="fill:var(--color-gray-100);">lihat bagian 3</text>
+
+              <path class="fc-arrow" d="M705,75 L736,75" marker-end="url(#b1)"/>
+
+              <rect class="fc-node fc-node-admin fc-hot" id="n-close-mcp" tabindex="0"
+                    x="740" y="54" width="120" height="42"/>
+              <text class="fc-label" x="800" y="69">Close MCP</text>
+              <text class="fc-code" x="800" y="84">O &rarr; A</text>
+
+              <path class="fc-arrow fc-arrow-success" d="M860,75 L886,75" marker-end="url(#b1s)"/>
+
+              <rect class="fc-node fc-node-qc fc-hot" id="n-mcp-released" tabindex="0"
+                    x="890" y="54" width="100" height="42"/>
+              <text class="fc-label" x="940" y="69">MCP</text>
+              <text class="fc-label" x="940" y="83">Released</text>
+            </svg>
+          </div>
+
+          <div class="fc-legend">
+            <div class="fc-legend-item">
+              <span class="fc-legend-swatch" style="background:var(--color-info);"></span> Aksi Sales
+            </div>
+            <div class="fc-legend-item">
+              <span class="fc-legend-swatch" style="background:var(--color-navy);"></span> Aksi Admin
+            </div>
+            <div class="fc-legend-item">
+              <span class="fc-legend-swatch" style="background:var(--color-success);"></span> Aksi QC
+            </div>
+            <div class="fc-legend-item">
+              <span class="fc-legend-swatch" style="background:var(--color-gray-600);"></span> Otomatis oleh sistem
+            </div>
+            <div class="fc-legend-item">
+              <span class="fc-legend-swatch" style="background:var(--color-warning-bg);border:1px solid var(--color-warning);"></span> Keputusan
+            </div>
+          </div>
+
+          <div class="fc-rules" id="rulesFlow"></div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           SECTION 2 — State machine panel DCP
+           ============================================================ -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-flask"></i>
+            2. Status Panel DCP
+          </h3>
+          <span class="text-muted text-sm">siklus hidup satu panel</span>
+        </div>
+        <div class="card-body">
+          <div class="fc-scroll">
+            <svg class="fc-svg" viewBox="0 0 1000 240" preserveAspectRatio="xMidYMid meet"
+                 role="img" aria-label="State machine status panel DCP">
+              <defs>
+                <marker id="c1" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-gray-400)"/>
+                </marker>
+                <marker id="c1d" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-danger)"/>
+                </marker>
+                <marker id="c1s" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-success)"/>
+                </marker>
+              </defs>
+
+              <rect class="fc-node fc-node-idle fc-hot" id="n-st-na" tabindex="0"
+                    x="20" y="52" width="104" height="46"/>
+              <text class="fc-code fc-code-dark" x="72" y="68">NA</text>
+              <text class="fc-note" x="72" y="84">Non-Aktif</text>
+
+              <path class="fc-arrow" d="M124,75 L206,75" marker-end="url(#c1)"/>
+              <text class="fc-note" x="165" y="66">aktivasi</text>
+              <text class="fc-note" x="165" y="94">isi tgl manufaktur</text>
+
+              <rect class="fc-node fc-node-sales fc-hot" id="n-st-ak" tabindex="0"
+                    x="210" y="52" width="104" height="46"/>
+              <text class="fc-code" x="262" y="68">AK</text>
+              <text class="fc-note" x="262" y="84" style="fill:var(--color-gray-100);">Aktif</text>
+
+              <path class="fc-arrow" d="M314,75 L396,75" marker-end="url(#c1)"/>
+              <text class="fc-note" x="355" y="66">submit</text>
+              <text class="fc-note" x="355" y="94" id="noteFoto2">+ foto</text>
+
+              <rect class="fc-node fc-node-warning fc-hot" id="n-st-sb" tabindex="0"
+                    x="400" y="52" width="104" height="46"/>
+              <text class="fc-code" x="452" y="68">SB</text>
+              <text class="fc-note" x="452" y="84" style="fill:#78350F;">Submitted</text>
+
+              <path class="fc-arrow fc-arrow-success" d="M504,75 L594,75" marker-end="url(#c1s)"/>
+              <text class="fc-note fc-note-success" x="549" y="66">approve QC</text>
+
+              <rect class="fc-node fc-node-qc fc-hot" id="n-st-ap" tabindex="0"
+                    x="598" y="52" width="104" height="46"/>
+              <text class="fc-code" x="650" y="68">AP</text>
+              <text class="fc-note" x="650" y="84" style="fill:var(--color-gray-100);">Approved</text>
+
+              <path class="fc-arrow fc-arrow-alt fc-arrow-success" d="M702,75 L788,75" marker-end="url(#c1s)"/>
+              <rect class="fc-node fc-node-system fc-hot" id="n-st-to-mcp" tabindex="0"
+                    x="792" y="52" width="188" height="46"/>
+              <text class="fc-label" x="886" y="68">Naik jadi slot MCP</text>
+              <text class="fc-code" x="886" y="84">status DA</text>
+
+              <!-- reject -->
+              <path class="fc-arrow fc-arrow-danger" d="M452,98 L452,150 L396,150" marker-end="url(#c1d)"/>
+              <text class="fc-note fc-note-danger" x="530" y="128">reject QC + alasan</text>
+
+              <rect class="fc-node fc-node-danger fc-hot" id="n-st-rj" tabindex="0"
+                    x="288" y="128" width="104" height="46"/>
+              <text class="fc-code" x="340" y="144">RJ</text>
+              <text class="fc-note" x="340" y="160" style="fill:var(--color-danger-bg);">Rejected</text>
+
+              <!-- UNDO -->
+              <path class="fc-arrow" d="M288,150 L232,150 L232,196 L560,196 L560,102" marker-end="url(#c1)"/>
+              <text class="fc-note" x="396" y="209">UNDO &mdash; kembali ke Submitted, set undo_flag = 'X'</text>
+
+              <!-- header reject -->
+              <rect class="fc-node fc-node-idle fc-hot" id="n-hdr-reject" tabindex="0"
+                    x="20" y="128" width="104" height="46"/>
+              <text class="fc-code fc-code-dark" x="72" y="144">O &rarr; R</text>
+              <text class="fc-note" x="72" y="160">Header di-reject</text>
+              <text class="fc-note" x="72" y="188">buyer batal beli</text>
+            </svg>
+          </div>
+
+          <div class="fc-legend" id="legendDcp"></div>
+          <div class="fc-rules" id="rulesDcp"></div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           SECTION 3 — State machine panel MCP
+           ============================================================ -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-box-archive"></i>
+            3. Status Panel MCP
+          </h3>
+          <span class="text-muted text-sm">dua titik masuk: warisan DCP &amp; slot polos</span>
+        </div>
+        <div class="card-body">
+          <div class="fc-scroll">
+            <svg class="fc-svg" viewBox="0 0 1000 250" preserveAspectRatio="xMidYMid meet"
+                 role="img" aria-label="State machine status panel MCP">
+              <defs>
+                <marker id="d1" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-gray-400)"/>
+                </marker>
+                <marker id="d1d" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-danger)"/>
+                </marker>
+                <marker id="d1s" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-success)"/>
+                </marker>
+              </defs>
+
+              <rect class="fc-node fc-node-system fc-hot" id="n-m-from-dcp" tabindex="0"
+                    x="16" y="30" width="150" height="44"/>
+              <text class="fc-label" x="91" y="45">Dari panel DCP</text>
+              <text class="fc-code" x="91" y="60">AP</text>
+
+              <rect class="fc-node fc-node-idle fc-hot" id="n-m-bl" tabindex="0"
+                    x="16" y="130" width="150" height="46"/>
+              <text class="fc-code fc-code-dark" x="91" y="146">BL</text>
+              <text class="fc-note" x="91" y="162">Blank (polos)</text>
+
+              <path class="fc-arrow" d="M166,52 L240,52 L240,100 L282,100" marker-end="url(#d1)"/>
+              <path class="fc-arrow" d="M166,153 L240,153 L240,116 L282,116" marker-end="url(#d1)"/>
+              <text class="fc-note" x="200" y="196">start slot &mdash; isi tgl manufaktur</text>
+
+              <rect class="fc-node fc-node-sales fc-hot" id="n-m-da" tabindex="0"
+                    x="286" y="85" width="116" height="46"/>
+              <text class="fc-code" x="344" y="101">DA</text>
+              <text class="fc-note" x="344" y="117" style="fill:var(--color-gray-100);">DCP-Approved</text>
+
+              <path class="fc-arrow" d="M402,108 L486,108" marker-end="url(#d1)"/>
+              <text class="fc-note" x="444" y="99">submit</text>
+              <text class="fc-note" x="444" y="127" id="noteFoto3">+ foto</text>
+
+              <rect class="fc-node fc-node-warning fc-hot" id="n-m-sb" tabindex="0"
+                    x="490" y="85" width="116" height="46"/>
+              <text class="fc-code" x="548" y="101">SB</text>
+              <text class="fc-note" x="548" y="117" style="fill:#78350F;">Submitted</text>
+
+              <path class="fc-arrow fc-arrow-success" d="M606,108 L690,108" marker-end="url(#d1s)"/>
+              <text class="fc-note fc-note-success" x="648" y="99">approve QC</text>
+
+              <rect class="fc-node fc-node-qc fc-hot" id="n-m-ap" tabindex="0"
+                    x="694" y="85" width="116" height="46"/>
+              <text class="fc-code" x="752" y="101">AP</text>
+              <text class="fc-note" x="752" y="117" style="fill:var(--color-gray-100);">MCP-Approved</text>
+
+              <!-- reject balik ke DA -->
+              <path class="fc-arrow fc-arrow-danger" d="M548,131 L548,166 L344,166 L344,135" marker-end="url(#d1d)"/>
+              <text class="fc-note fc-note-danger" x="446" y="159">reject &mdash; foto dihapus, siap submit ulang</text>
+
+              <!-- close -> OB -->
+              <path class="fc-arrow" d="M752,131 L752,204 L610,204" marker-end="url(#d1)"/>
+              <rect class="fc-node fc-node-end fc-hot" id="n-m-ob" tabindex="0"
+                    x="490" y="182" width="116" height="44"/>
+              <text class="fc-code" x="548" y="197">OB</text>
+              <text class="fc-note" x="548" y="212" style="fill:var(--color-gray-100);">Obsolete</text>
+              <text class="fc-note" x="790" y="228">saat close MCP: panel non-AP &rarr; OB</text>
+
+              <path class="fc-arrow fc-arrow-success" d="M810,108 L888,108" marker-end="url(#d1s)"/>
+              <text class="fc-note fc-note-success" x="932" y="103">panel master</text>
+              <text class="fc-note fc-note-success" x="932" y="116">hidup</text>
+            </svg>
+          </div>
+
+          <div class="fc-callout">
+            <strong>Beda dengan DCP:</strong> reject panel MCP tidak mematikan panel. Panel kembali ke
+            <span class="text-mono">DA</span>, foto yang sudah di-upload dihapus, dan panel bisa di-submit ulang.
+            Di DCP, reject menghasilkan status <span class="text-mono">RJ</span> tersendiri dan butuh tombol
+            UNDO untuk kembali.
+          </div>
+
+          <div class="fc-legend" id="legendMcp"></div>
+          <div class="fc-rules" id="rulesMcp"></div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           SECTION 4 — Alur Renewal MCP
+           ============================================================ -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            4. Alur Renewal MCP
+          </h3>
+          <span class="text-muted text-sm">perpanjangan tahunan &mdash; tidak lewat DCP</span>
+        </div>
+        <div class="card-body">
+          <div class="fc-scroll">
+            <svg class="fc-svg" viewBox="0 0 1000 215" preserveAspectRatio="xMidYMid meet"
+                 role="img" aria-label="Alur renewal MCP">
+              <defs>
+                <marker id="e1" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-gray-400)"/>
+                </marker>
+                <marker id="e1s" markerWidth="9" markerHeight="9" refX="8" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L8,3 z" fill="var(--color-success)"/>
+                </marker>
+              </defs>
+
+              <rect class="fc-node fc-node-admin fc-hot" id="n-r-input" tabindex="0"
+                    x="16" y="80" width="132" height="46"/>
+              <text class="fc-label" x="82" y="96">Input SO baru</text>
+              <text class="fc-note" x="82" y="111" style="fill:var(--color-gray-200);">halaman Renewal</text>
+
+              <path class="fc-arrow" d="M148,103 L200,103" marker-end="url(#e1)"/>
+
+              <rect class="fc-node fc-node-system fc-hot" id="n-r-find" tabindex="0"
+                    x="204" y="80" width="156" height="46"/>
+              <text class="fc-label" x="282" y="96">Cari MCP existing</text>
+              <text class="fc-note" x="282" y="111" style="fill:var(--color-gray-200);">cocokkan per material</text>
+
+              <!-- MCP lama -->
+              <path class="fc-arrow" d="M360,95 L400,95 L400,45 L436,45" marker-end="url(#e1)"/>
+              <rect class="fc-node fc-node-end fc-hot" id="n-r-old-closed" tabindex="0"
+                    x="440" y="22" width="216" height="46"/>
+              <text class="fc-label" x="548" y="38">MCP lama ditutup</text>
+              <text class="fc-code" x="548" y="53">A &middot; is_renewed = 'X'</text>
+
+              <path class="fc-arrow" d="M656,45 L702,45" marker-end="url(#e1)"/>
+              <rect class="fc-node fc-node-end fc-hot" id="n-r-old-ob" tabindex="0"
+                    x="706" y="22" width="180" height="46"/>
+              <text class="fc-label" x="796" y="38">Semua panel lama</text>
+              <text class="fc-code" x="796" y="53">&rarr; OB (Obsolete)</text>
+
+              <!-- MCP baru -->
+              <path class="fc-arrow fc-arrow-success" d="M360,111 L400,111 L400,161 L436,161" marker-end="url(#e1s)"/>
+              <rect class="fc-node fc-node-qc fc-hot" id="n-r-new" tabindex="0"
+                    x="440" y="138" width="216" height="46"/>
+              <text class="fc-label" x="548" y="154">MCP baru dibuat</text>
+              <text class="fc-code" x="548" y="169">parent_mcp_id = MCP lama</text>
+
+              <path class="fc-arrow fc-arrow-success" d="M656,161 L702,161" marker-end="url(#e1s)"/>
+              <rect class="fc-node fc-node-sales fc-hot" id="n-r-cycle" tabindex="0"
+                    x="706" y="138" width="180" height="46"/>
+              <text class="fc-label" x="796" y="154">Masuk siklus panel MCP</text>
+              <text class="fc-note" x="796" y="169" style="fill:var(--color-gray-100);">lihat bagian 3</text>
+
+              <text class="fc-note" x="470" y="205" style="font-weight:600;">
+                Renewal melewati seluruh siklus DCP &mdash; dcp_id pada MCP baru sengaja dikosongkan
+              </text>
+            </svg>
+          </div>
+
+          <div class="fc-rules" id="rulesRenewal"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/db.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/sidebar.js"></script>
+<script>
+
+/* Halaman referensi — semua role yang sudah login boleh buka */
+const pageReady = Auth.guard([]);
+
+if (pageReady) {
+  Sidebar.render();
+  Sidebar.renderHeader(
+    'Alur Sistem',
+    'Peta proses Color Panel: dari SO masuk sampai MCP jadi panel master'
+  );
+
+  renderNotes();
+  renderLegends();
+  /* Tooltip.init dipanggil di akhir file — `const Tooltip` belum
+     terdefinisi di titik ini (temporal dead zone). */
+}
+
+/* ------------------------------------------------------------
+ * Angka aturan dibaca dari CONFIG — bukan diketik manual, supaya
+ * diagram tidak bisa berbohong kalau threshold-nya diubah.
+ * ------------------------------------------------------------ */
+
+function cfg(key) {
+  const v = CONFIG[key];
+  return (v === undefined || v === null) ? '?' : v;
+}
+
+function renderNotes() {
+  const minFoto = cfg('MIN_PHOTO_PER_PANEL');
+
+  /* Label "+ min N foto" di tiga diagram */
+  Utils.setText('noteFoto',  `+ min ${minFoto} foto`);
+  Utils.setText('noteFoto2', `+ min ${minFoto} foto`);
+  Utils.setText('noteFoto3', `+ min ${minFoto} foto`);
+
+  Utils.setHtml('rulesFlow', `
+    <ul>
+      <li>Satu Request = <strong>satu SO</strong>. Satu SO bisa menghasilkan <strong>banyak DCP</strong>
+          &mdash; satu material = satu DCP header.</li>
+      <li>Jumlah panel per DCP mengikuti <strong>qty item di SO</strong>, bukan angka tetap.</li>
+      <li>Color Code dibuat otomatis saat Admin approve, format
+          <span class="text-mono">KW</span> + 5 digit, dipetakan <strong>1:1 ke material FERT</strong>.</li>
+      <li>Approve ditolak bila material sudah punya Color Code, atau kombinasi SO + material
+          sudah pernah di-import. Kasus ini ditangani lewat <strong>halaman Renewal</strong>.</li>
+      <li>Panel DCP dibuat dalam keadaan <strong>non-aktif</strong> &mdash; panel polos yang belum dicat.</li>
+      <li>MCP header dibuat otomatis saat <strong>panel DCP pertama di-approve</strong>,
+          bukan saat DCP di-close.</li>
+    </ul>
+  `);
+
+  Utils.setHtml('rulesDcp', `
+    <ul>
+      <li>Aktivasi panel: Admin <strong>bebas menentukan tanggal manufaktur</strong>,
+          tidak dipaksa hari ini.</li>
+      <li>Submit panel wajib melampirkan <strong>minimal ${minFoto} foto</strong>.</li>
+      <li>Panel <span class="text-mono">RJ</span> tidak bisa dipakai ulang, tapi masih bisa
+          dikembalikan lewat tombol <strong>UNDO</strong>.</li>
+      <li>Close DCP butuh <strong>minimal ${cfg('MIN_APPROVE_DCP_CLOSE')} panel approved</strong>.</li>
+      <li>Setelah header di-close, panel yang masih <span class="text-mono">NA</span>/<span class="text-mono">AK</span>/<span class="text-mono">SB</span>
+          tetap pada statusnya dan tidak bisa maju lagi.</li>
+      <li>DCP berlaku <strong>${cfg('DCP_EXPIRY_DAYS')} hari</strong>, dengan pengingat
+          <strong>${cfg('DCP_REMINDER_DAYS')} hari</strong> sebelumnya.</li>
+    </ul>
+  `);
+
+  Utils.setHtml('rulesMcp', `
+    <ul>
+      <li>Slot MCP dibangkitkan sebanyak qty DCP: satu slot terisi dari panel DCP yang approved,
+          sisanya <span class="text-mono">BL</span> (polos).</li>
+      <li>Slot <span class="text-mono">BL</span> harus di-start dulu (isi tanggal manufaktur)
+          sebelum bisa di-submit.</li>
+      <li>Submit panel wajib <strong>minimal ${minFoto} foto</strong>.</li>
+      <li>Close MCP butuh <strong>minimal ${cfg('MIN_APPROVE_MCP_CLOSE')} panel approved</strong>;
+          sisanya otomatis jadi <span class="text-mono">OB</span>.</li>
+      <li>MCP berlaku <strong>${cfg('MCP_EXPIRY_DAYS')} hari</strong> dan diperbarui lewat renewal.</li>
+    </ul>
+  `);
+
+  Utils.setHtml('rulesRenewal', `
+    <ul>
+      <li>Renewal dipicu dengan <strong>SO baru</strong> untuk material yang Color Code-nya sudah ada.</li>
+      <li>MCP lama ditutup dan seluruh panelnya jadi <span class="text-mono">OB</span> &mdash;
+          tidak ada dua MCP hidup untuk material yang sama.</li>
+      <li>MCP baru menyimpan <span class="text-mono">parent_mcp_id</span> sehingga riwayat
+          perpanjangan bisa ditelusuri.</li>
+      <li>Renewal <strong>tidak melewati DCP</strong> sama sekali &mdash; warnanya sudah pernah disetujui.</li>
+      <li>Hak akses renewal: <strong>ADMIN &amp; IT</strong>. QC bisa melihat MCP tapi tidak me-renewal.</li>
+    </ul>
+  `);
+}
+
+/* Legend status di-generate dari map label di config.js — bukan diketik ulang */
+function renderLegends() {
+  const swatch = {
+    NA: 'var(--color-white)', AK: 'var(--color-info)', SB: 'var(--color-warning)',
+    AP: 'var(--color-success)', RJ: 'var(--color-danger)', OB: 'var(--color-gray-400)',
+    DA: 'var(--color-info)', BL: 'var(--color-white)',
+  };
+
+  const build = (codes, labelMap) => codes.map(c => `
+    <div class="fc-legend-item">
+      <span class="fc-legend-swatch"
+            style="background:${swatch[c] || 'var(--color-gray-300)'};border:1px solid var(--color-gray-300);"></span>
+      <span class="fc-legend-code">${c}</span>
+      <span>${Utils.escapeHtml(labelMap[c] || c)}</span>
+    </div>
+  `).join('');
+
+  Utils.setHtml('legendDcp',
+    build(['NA', 'AK', 'SB', 'AP', 'RJ', 'OB'], DCP_PANEL_STATUS_LABEL));
+
+  Utils.setHtml('legendMcp',
+    build(['DA', 'BL', 'SB', 'AP', 'OB'], MCP_PANEL_STATUS_LABEL));
+}
+
+/* ============================================================
+ * ISI TOOLTIP per node
+ * ============================================================
+ * Dibangun lewat fungsi (bukan konstanta) supaya angka aturan
+ * tetap datang dari CONFIG — sama seperti catatan di bawah diagram.
+ * Key = id elemen SVG. Node tanpa entri di sini tidak akan
+ * di-hover-kan sama sekali (lihat Tooltip.init).
+ * Baris "Kode" hanya diisi kalau node benar-benar memetakan ke
+ * satu fungsi di biz.js.
+ * ============================================================ */
+function buildTips() {
+  const foto = cfg('MIN_PHOTO_PER_PANEL');
+  const dcpMin = cfg('MIN_APPROVE_DCP_CLOSE');
+  const mcpMin = cfg('MIN_APPROVE_MCP_CLOSE');
+  const dcpDays = cfg('DCP_EXPIRY_DAYS');
+  const mcpDays = cfg('MCP_EXPIRY_DAYS');
+
+  return {
+    /* ---------- 1a: SO sampai DCP terbentuk ---------- */
+    'n-input-so': {
+      title: 'Input Nomor SO',
+      rows: [
+        ['Pelaku', 'SALES'],
+        ['Syarat', 'SO ada di sistem; buyer SO cocok dengan buyer user Sales; SO belum punya request berstatus Pending/Approved; minimal 1 material di SO belum punya Color Code'],
+        ['Efek', 'Membuat satu baris Request-DCP berstatus P (Pending) di tabel requests / ZCP_REQUEST'],
+      ],
+      code: 'Biz.createRequest()',
+    },
+    'n-req-created': {
+      title: 'Request-DCP Terbentuk',
+      rows: [
+        ['Arti', 'Permintaan pembuatan color panel yang menunggu keputusan Admin'],
+        ['Isi', 'Nomor SO, buyer, sales pembuat, dan remarks dari Sales'],
+        ['Keluar ke', 'Approved (A) atau Rejected (R) — hanya Admin yang bisa memutuskan'],
+      ],
+    },
+    'n-review-admin': {
+      title: 'Review Request oleh Admin',
+      rows: [
+        ['Pelaku', 'ADMIN'],
+        ['Syarat', 'Request masih berstatus P. Request yang sudah diproses tidak bisa direview ulang'],
+        ['Efek', 'Dua cabang: approve (lanjut ke validasi material) atau reject (alur berhenti)'],
+      ],
+      code: 'Biz.approveRequest() / Biz.rejectRequest()',
+    },
+    'n-req-rejected': {
+      title: 'Request Ditolak',
+      rows: [
+        ['Pelaku', 'ADMIN'],
+        ['Syarat', 'Alasan penolakan wajib diisi'],
+        ['Efek', 'Status P → R, alasan tersimpan di reject_reason. Tidak ada Color Code maupun DCP yang terbentuk — alur berhenti di sini'],
+      ],
+      code: 'Biz.rejectRequest()',
+    },
+    'n-validasi-color': {
+      title: 'Validasi Sebelum Approve',
+      rows: [
+        ['Pelaku', 'Sistem'],
+        ['Syarat', 'Untuk setiap material di SO: belum punya Color Code, DAN kombinasi SO + material belum pernah di-import'],
+        ['Efek', 'Kalau satu material saja gagal, seluruh approve dibatalkan — tidak ada DCP yang dibuat sebagian'],
+      ],
+      code: 'Biz.approveRequest()',
+    },
+    'n-tolak-renewal': {
+      title: 'Approve Ditolak — Arahkan ke Renewal',
+      rows: [
+        ['Sebab', 'Material sudah punya Color Code, atau SO + material itu sudah pernah di-import sebelumnya'],
+        ['Efek', 'Pesan error menyebut material mana yang bentrok dan mengarahkan user ke halaman Renewal MCP'],
+        ['Catatan', 'Request tetap berstatus P, jadi masih bisa diproses lagi setelah datanya dibereskan'],
+      ],
+      code: 'Biz.approveRequest()',
+    },
+    'n-auto-generate': {
+      title: 'Generate Otomatis per Item SO',
+      rows: [
+        ['Pelaku', 'Sistem'],
+        ['Efek', 'Per item SO dibuat: Color Code KW##### (1:1 ke material FERT), DCP header status O, panel DCP sebanyak qty item SO dengan status NA, dan entri ZCP_SO_IMPORT sebagai penjaga anti-duplikat'],
+        ['Masa berlaku', `DCP header berlaku ${dcpDays} hari sejak dibuat, dihitung ulang saat panel pertama diaktivasi`],
+      ],
+      code: 'Biz.approveRequest()',
+    },
+
+    /* ---------- 1b: siklus DCP sampai MCP released ---------- */
+    'n-aktivasi': {
+      title: 'Aktivasi Panel DCP',
+      rows: [
+        ['Pelaku', 'ADMIN'],
+        ['Syarat', 'Panel berstatus NA dan tanggal manufaktur wajib diisi — Admin bebas menentukan tanggalnya, tidak dipaksa hari ini'],
+        ['Efek', `NA → AK. Panel pertama yang diaktivasi juga menyetel mfg_date, expire_date (+${dcpDays} hari), dan reminder_date di header DCP`],
+      ],
+      code: 'Biz.activateDcpPanel()',
+    },
+    'n-submit-dcp': {
+      title: 'Submit Panel DCP',
+      rows: [
+        ['Pelaku', 'ADMIN'],
+        ['Syarat', `Panel berstatus AK dan dilampiri minimal ${foto} foto`],
+        ['Efek', 'AK → SB. Foto disimpan sebagai dokumen DMS bertipe ZDCP dan panel menunggu keputusan QC'],
+      ],
+      code: 'Biz.submitDcpPanel()',
+    },
+    'n-approve-dcp': {
+      title: 'Approve Panel DCP',
+      rows: [
+        ['Pelaku', 'QC'],
+        ['Syarat', 'Panel berstatus SB'],
+        ['Efek', 'SB → AP. Panel approved pertama pada DCP ini sekaligus memicu pembuatan MCP header beserta seluruh slotnya'],
+      ],
+      code: 'Biz.approveDcpPanel()',
+    },
+    'n-mcp-autocreate': {
+      title: 'Auto-Create MCP Header',
+      rows: [
+        ['Pelaku', 'Sistem'],
+        ['Pemicu', 'Panel DCP pertama yang di-approve — bukan saat DCP di-close'],
+        ['Efek', 'MCP header status O dibuat, lalu slot dibangkitkan sebanyak qty_total DCP. Slot yang berasal dari panel approved berstatus DA, sisanya BL'],
+      ],
+      code: 'Biz.approveDcpPanel()',
+    },
+    'n-close-dcp': {
+      title: 'Close DCP Header',
+      rows: [
+        ['Pelaku', 'ADMIN'],
+        ['Syarat', `Header masih berstatus O dan sudah ada minimal ${dcpMin} panel approved`],
+        ['Efek', 'O → C. Panel yang masih NA/AK/SB tetap pada statusnya tapi tidak bisa maju lagi; hanya panel AP yang sudah naik ke MCP'],
+      ],
+      code: 'Biz.closeDcpHeader()',
+    },
+    'n-siklus-mcp': {
+      title: 'Siklus Panel MCP',
+      rows: [
+        ['Pelaku', 'ADMIN & QC'],
+        ['Isi', 'Tiap slot MCP di-start (isi tanggal manufaktur), di-submit dengan foto, lalu di-approve QC'],
+        ['Detail', 'Lihat bagian 3 — Status Panel MCP'],
+      ],
+    },
+    'n-close-mcp': {
+      title: 'Close MCP Header',
+      rows: [
+        ['Pelaku', 'ADMIN'],
+        ['Syarat', `Header masih berstatus O dan sudah ada minimal ${mcpMin} panel approved`],
+        ['Efek', 'O → A (Closed/Released). Semua panel yang bukan AP otomatis diubah jadi OB (Obsolete)'],
+      ],
+      code: 'Biz.closeMcpHeader()',
+    },
+    'n-mcp-released': {
+      title: 'MCP Released',
+      rows: [
+        ['Arti', 'MCP resmi jadi panel master acuan warna untuk material tersebut'],
+        ['Masa berlaku', `${mcpDays} hari, diperpanjang lewat renewal (bagian 4)`],
+        ['Catatan', 'Hanya boleh ada satu MCP hidup per material — renewal menutup yang lama'],
+      ],
+    },
+
+    /* ---------- 2: state machine panel DCP ---------- */
+    'n-st-na': {
+      title: 'NA · Non-Aktif',
+      rows: [
+        ['Arti', 'Panel polos yang belum dicat'],
+        ['Masuk dari', 'Dibuat otomatis saat Admin approve Request, sebanyak qty item SO'],
+        ['Keluar ke', 'AK lewat aktivasi (isi tanggal manufaktur)'],
+      ],
+      code: 'Biz.activateDcpPanel()',
+    },
+    'n-st-ak': {
+      title: 'AK · Aktif',
+      rows: [
+        ['Arti', 'Panel sudah dicat dan punya tanggal manufaktur'],
+        ['Masuk dari', 'NA lewat aktivasi'],
+        ['Keluar ke', `SB lewat submit dengan minimal ${foto} foto`],
+      ],
+      code: 'Biz.submitDcpPanel()',
+    },
+    'n-st-sb': {
+      title: 'SB · Submitted',
+      rows: [
+        ['Arti', 'Panel beserta fotonya menunggu keputusan QC'],
+        ['Masuk dari', 'AK lewat submit, atau RJ lewat UNDO'],
+        ['Keluar ke', 'AP (approve QC) atau RJ (reject QC — alasan wajib diisi)'],
+      ],
+      code: 'Biz.approveDcpPanel() / Biz.rejectDcpPanel()',
+    },
+    'n-st-ap': {
+      title: 'AP · Approved',
+      rows: [
+        ['Arti', 'Warna panel disetujui QC'],
+        ['Masuk dari', 'SB lewat approve QC'],
+        ['Keluar ke', 'Tidak ada — AP adalah status akhir di sisi DCP. Panel ini yang dihitung untuk syarat close DCP, dan salinannya naik jadi slot MCP'],
+      ],
+      code: 'Biz.approveDcpPanel()',
+    },
+    'n-st-to-mcp': {
+      title: 'Naik Jadi Slot MCP',
+      rows: [
+        ['Pelaku', 'Sistem'],
+        ['Efek', 'Panel DCP yang approved diwariskan jadi slot MCP berstatus DA, membawa mfg_date dan referensi dcp_panel_id'],
+        ['Catatan', 'Panel fisiknya sama — stiker DCP ditimpa stiker MCP. Status DCP-nya sendiri tetap AP'],
+      ],
+      code: 'Biz.approveDcpPanel()',
+    },
+    'n-st-rj': {
+      title: 'RJ · Rejected',
+      rows: [
+        ['Arti', 'Panel ditolak QC; alasan penolakan wajib diisi dan tersimpan'],
+        ['Masuk dari', 'SB lewat reject QC'],
+        ['Keluar ke', "Hanya SB, lewat tombol UNDO — yang juga menyetel undo_flag = 'X' sebagai jejak koreksi"],
+      ],
+      code: 'Biz.rejectDcpPanel() / Biz.undoDcpPanel()',
+    },
+    'n-hdr-reject': {
+      title: 'Reject Header DCP (O → R)',
+      rows: [
+        ['Pelaku', 'ADMIN'],
+        ['Syarat', 'Header masih berstatus O dan alasan wajib diisi. Dipakai saat buyer batal beli'],
+        ['Efek', 'Header O → R, dan semua panel yang belum AP langsung diubah jadi OB'],
+        ['Beda dengan close', 'Close DCP membiarkan panel NA/AK/SB apa adanya; reject header meng-obsolete-kan semuanya'],
+      ],
+      code: 'Biz.rejectDcpHeader()',
+    },
+
+    /* ---------- 3: state machine panel MCP ---------- */
+    'n-m-from-dcp': {
+      title: 'Warisan dari Panel DCP',
+      rows: [
+        ['Masuk dari', 'Panel DCP yang berstatus AP'],
+        ['Efek', 'Menjadi slot MCP berstatus DA, dengan mfg_date ikut dari panel DCP asalnya'],
+        ['Catatan', 'Hanya slot dengan nomor panel yang sama dengan panel DCP approved yang terisi seperti ini'],
+      ],
+      code: 'Biz.approveDcpPanel()',
+    },
+    'n-m-bl': {
+      title: 'BL · Blank (Polos)',
+      rows: [
+        ['Arti', 'Slot MCP yang belum dicat sama sekali'],
+        ['Masuk dari', 'Dibangkitkan bersama MCP header sebanyak qty_total; pada MCP hasil renewal, semua slot dimulai dari BL'],
+        ['Keluar ke', 'DA lewat start slot (isi tanggal manufaktur)'],
+      ],
+      code: 'Biz.startBlankMcpSlot()',
+    },
+    'n-m-da': {
+      title: 'DA · DCP-Approved',
+      rows: [
+        ['Arti', 'Slot sudah punya tanggal manufaktur dan siap di-submit'],
+        ['Masuk dari', 'Warisan panel DCP approved, start slot dari BL, atau balik dari SB karena reject'],
+        ['Keluar ke', `SB lewat submit dengan minimal ${foto} foto`],
+      ],
+      code: 'Biz.submitMcpPanel()',
+    },
+    'n-m-sb': {
+      title: 'SB · Submitted',
+      rows: [
+        ['Masuk dari', 'DA lewat submit; foto tersimpan sebagai dokumen DMS bertipe ZMCP'],
+        ['Keluar ke', 'AP lewat approve QC, atau kembali ke DA lewat reject — foto yang sudah di-upload dihapus dan panel siap di-submit ulang'],
+        ['Beda dengan DCP', 'Di MCP tidak ada status RJ terpisah, jadi tidak butuh UNDO'],
+      ],
+      code: 'Biz.approveMcpPanel() / Biz.rejectMcpPanel()',
+    },
+    'n-m-ap': {
+      title: 'AP · MCP-Approved',
+      rows: [
+        ['Arti', 'Panel master warna yang hidup dan dipakai sebagai acuan produksi'],
+        ['Masuk dari', 'SB lewat approve QC'],
+        ['Keluar ke', `Tidak ada — status akhir. Panel AP inilah yang dihitung untuk syarat minimal ${mcpMin} panel saat close MCP`],
+      ],
+      code: 'Biz.approveMcpPanel()',
+    },
+    'n-m-ob': {
+      title: 'OB · Obsolete',
+      rows: [
+        ['Masuk dari', 'Close MCP — semua panel yang bukan AP diubah jadi OB; atau renewal — semua panel MCP lama jadi OB, termasuk yang AP'],
+        ['Keluar ke', 'Tidak ada — status akhir, panel tidak bisa dihidupkan lagi'],
+        ['Catatan', 'Alasan obsolete tersimpan di obsolete_reason supaya bisa dibedakan sebabnya'],
+      ],
+      code: 'Biz.closeMcpHeader() / Biz.executeRenewal()',
+    },
+
+    /* ---------- 4: renewal ---------- */
+    'n-r-input': {
+      title: 'Input SO Baru untuk Renewal',
+      rows: [
+        ['Pelaku', 'ADMIN & IT'],
+        ['Syarat', 'SO ada di sistem dan materialnya sudah punya Color Code dengan MCP yang masih terdaftar'],
+        ['Efek', 'Menampilkan daftar material di SO itu yang bisa di-renewal, beserta MCP lamanya'],
+      ],
+      code: 'Biz.findRenewalCandidate()',
+    },
+    'n-r-find': {
+      title: 'Cari MCP Existing',
+      rows: [
+        ['Pelaku', 'Sistem'],
+        ['Cara', 'Tiap material di SO dicocokkan ke MCP berstatus O atau A yang belum pernah di-renew'],
+        ['Penjaga', 'Kombinasi SO + material yang sudah pernah di-import akan ditolak, supaya satu SO tidak dipakai dua kali'],
+      ],
+      code: 'Biz.findRenewalCandidate()',
+    },
+    'n-r-old-closed': {
+      title: 'MCP Lama Ditutup',
+      rows: [
+        ['Efek', "Status MCP lama diubah jadi A, is_renewed disetel 'X', dan renewal_date diisi tanggal hari ini"],
+        ['Tujuan', 'Menandai bahwa MCP ini sudah digantikan, bukan sekadar selesai secara normal'],
+      ],
+      code: 'Biz.executeRenewal()',
+    },
+    'n-r-old-ob': {
+      title: 'Panel MCP Lama Jadi Obsolete',
+      rows: [
+        ['Efek', 'Semua panel MCP lama yang belum OB diubah jadi OB, termasuk panel yang berstatus AP'],
+        ['Alasan', 'Supaya tidak ada dua panel master hidup untuk material yang sama — panel lama harus ditarik dari peredaran'],
+      ],
+      code: 'Biz.executeRenewal()',
+    },
+    'n-r-new': {
+      title: 'MCP Baru Dibuat',
+      rows: [
+        ['Efek', 'MCP header baru status O dengan dcp_id sengaja dikosongkan, parent_mcp_id menunjuk ke MCP lama'],
+        ['Tanggal', `mfg_date dan renewal_date = hari ini; expire_date = hari ini + ${mcpDays} hari`],
+        ['Jejak', 'parent_mcp_id membuat riwayat perpanjangan bisa ditelusuri mundur'],
+      ],
+      code: 'Biz.executeRenewal()',
+    },
+    'n-r-cycle': {
+      title: 'Slot Baru Semuanya Blank',
+      rows: [
+        ['Efek', 'Slot dibangkitkan sebanyak qty item SO, semuanya berstatus BL'],
+        ['Lanjutan', 'Tiap slot harus di-start dulu sebelum bisa di-submit — masuk siklus di bagian 3'],
+        ['Catatan', 'Karena tidak lewat DCP, tidak ada slot yang langsung berstatus DA'],
+      ],
+      code: 'Biz.executeRenewal()',
+    },
+  };
+}
+
+/* ============================================================
+ * TOOLTIP ENGINE
+ * ============================================================
+ * Tanpa library. Satu elemen tooltip dipakai ulang untuk semua
+ * node. Hover untuk mouse, klik untuk layar sentuh, focus untuk
+ * keyboard. Di BSP nanti blok ini bisa disalin apa adanya.
+ * ============================================================ */
+const Tooltip = {
+  tips: {},
+  el: null,
+  pinned: null,
+
+  init(tips) {
+    this.tips = tips || {};
+
+    /* Node tanpa entri tooltip dicabut dari .fc-hot supaya tidak
+       pernah memunculkan kotak kosong saat di-hover. */
+    document.querySelectorAll('.fc-hot').forEach(node => {
+      if (!this.tips[node.id]) {
+        node.classList.remove('fc-hot');
+        node.removeAttribute('tabindex');
+      }
+    });
+
+    this.el = document.createElement('div');
+    this.el.className = 'fc-tip';
+    this.el.setAttribute('role', 'tooltip');
+    document.body.appendChild(this.el);
+
+    document.addEventListener('mouseover', e => {
+      const node = this._hot(e.target);
+      if (node && !this.pinned) this.showAt(node, e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mousemove', e => {
+      if (this.pinned || !this.el.classList.contains('is-open')) return;
+      if (this._hot(e.target)) this.place(e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mouseout', e => {
+      if (this.pinned) return;
+      if (this._hot(e.target)) this.hide();
+    });
+
+    /* Klik = kunci tooltip (layar sentuh). Klik di luar node = tutup. */
+    document.addEventListener('click', e => {
+      const node = this._hot(e.target);
+      if (!node) { this.pinned = null; this.hide(); return; }
+      if (this.pinned === node) { this.pinned = null; this.hide(); return; }
+      this.pinned = node;
+      this.showAtNode(node);
+    });
+
+    /* Keyboard: Tab ke node menampilkan tooltip, Esc menutup */
+    document.addEventListener('focusin', e => {
+      const node = this._hot(e.target);
+      if (node) { this.pinned = null; this.showAtNode(node); }
+    });
+    document.addEventListener('focusout', e => {
+      if (this._hot(e.target) && !this.pinned) this.hide();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { this.pinned = null; this.hide(); }
+    });
+
+    /* Scroll di dalam .fc-scroll menggeser diagram — tooltip ikut basi */
+    document.querySelectorAll('.fc-scroll').forEach(box => {
+      box.addEventListener('scroll', () => { this.pinned = null; this.hide(); });
+    });
+    window.addEventListener('scroll', () => { this.pinned = null; this.hide(); }, true);
+  },
+
+  /* Cari node ber-tooltip terdekat dari target event */
+  _hot(target) {
+    if (!target || !target.closest) return null;
+    const node = target.closest('.fc-hot');
+    return (node && this.tips[node.id]) ? node : null;
+  },
+
+  showAt(node, x, y) {
+    this.el.innerHTML = this.render(this.tips[node.id]);
+    this.el.classList.add('is-open');
+    this.place(x, y);
+  },
+
+  /* Dipakai untuk klik & focus: jangkarkan ke tepi bawah node */
+  showAtNode(node) {
+    const r = node.getBoundingClientRect();
+    this.el.innerHTML = this.render(this.tips[node.id]);
+    this.el.classList.add('is-open');
+    this.place(r.left + r.width / 2, r.bottom - 6);
+  },
+
+  /* Posisi mengikuti kursor, dijepit supaya tidak keluar viewport */
+  place(x, y) {
+    const box = this.el.getBoundingClientRect();
+    const pad = 10;
+    let left = x + 16;
+    let top = y + 18;
+
+    if (left + box.width > window.innerWidth - pad) left = x - box.width - 16;
+    if (left < pad) left = pad;
+    if (top + box.height > window.innerHeight - pad) top = y - box.height - 14;
+    if (top < pad) top = pad;
+
+    this.el.style.left = left + 'px';
+    this.el.style.top = top + 'px';
+  },
+
+  hide() {
+    this.el.classList.remove('is-open');
+  },
+
+  render(tip) {
+    const rows = tip.rows.map(([k, v]) => `
+      <dt>${Utils.escapeHtml(k)}</dt>
+      <dd>${Utils.escapeHtml(v)}</dd>
+    `).join('');
+
+    return `
+      <div class="fc-tip-title">${Utils.escapeHtml(tip.title)}</div>
+      <dl class="fc-tip-rows">${rows}</dl>
+      ${tip.code ? `<div class="fc-tip-code">${Utils.escapeHtml(tip.code)}</div>` : ''}
+    `;
+  },
+};
+
+if (pageReady) Tooltip.init(buildTips());
+
+</script>
+</body>
+</html>

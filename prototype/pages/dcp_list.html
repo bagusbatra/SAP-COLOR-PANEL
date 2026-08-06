@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCP List &mdash; Color Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="../assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main">
+    <div class="page-header" id="page-header"></div>
+
+    <div class="page-content">
+
+      <div class="stats-grid" id="stats"></div>
+
+      <div class="card mb-4">
+        <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <input type="text" id="searchInput" class="form-control"
+              placeholder="Cari DCP ID, SO, material, color code, buyer...">
+          </div>
+          <select id="filterStatus" class="form-control" style="max-width:180px;">
+            <option value="">Semua Status</option>
+            <option value="O">Open</option>
+            <option value="C">Closed</option>
+            <option value="R">Rejected</option>
+          </select>
+          <select id="filterExpiry" class="form-control" style="max-width:180px;">
+            <option value="">Semua</option>
+            <option value="soon">Reminder (2 bulan)</option>
+            <option value="expired">Expired</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-flask"></i>
+            Daftar DCP (Development Color Panel)
+          </h3>
+          <span class="text-muted text-sm" id="totalInfo"></span>
+        </div>
+        <div id="tableWrap">
+          <div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuat...</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/db.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/biz.js"></script>
+<script src="../assets/js/sidebar.js"></script>
+<script>
+
+if (Auth.guard([ROLES.ADMIN, ROLES.QC, ROLES.IT])) {
+  Sidebar.render();
+  Sidebar.renderHeader('DCP List', 'Daftar Development Color Panel — siklus development warna');
+  renderStats();
+  renderTable();
+  Utils.el('searchInput').addEventListener('input', Utils.debounce(renderTable, 200));
+  Utils.el('filterStatus').addEventListener('change', renderTable);
+  Utils.el('filterExpiry').addEventListener('change', renderTable);
+}
+
+function renderStats() {
+  const all = DB.all('dcp_headers');
+  const open = all.filter(d => d.status === DCP_HDR_STATUS.OPEN).length;
+  const closed = all.filter(d => d.status === DCP_HDR_STATUS.CLOSED).length;
+  const today = Utils.today();
+  const reminder = all.filter(d =>
+    d.status === DCP_HDR_STATUS.OPEN &&
+    d.reminder_date && d.reminder_date <= today).length;
+  const expired = all.filter(d =>
+    d.status === DCP_HDR_STATUS.OPEN &&
+    d.expire_date && d.expire_date < today).length;
+
+  Utils.setHtml('stats', `
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-navy"><i class="fa-solid fa-flask"></i></div>
+      <div><div class="stat-value">${open}</div><div class="stat-label">DCP Open</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-success"><i class="fa-solid fa-check-circle"></i></div>
+      <div><div class="stat-value">${closed}</div><div class="stat-label">Closed</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-warning"><i class="fa-solid fa-bell"></i></div>
+      <div><div class="stat-value">${reminder}</div><div class="stat-label">Perlu Perhatian</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-danger"><i class="fa-solid fa-clock"></i></div>
+      <div><div class="stat-value">${expired}</div><div class="stat-label">Expired</div></div>
+    </div>
+  `);
+}
+
+function renderTable() {
+  const q = Utils.el('searchInput').value.toLowerCase().trim();
+  const filterStatus = Utils.el('filterStatus').value;
+  const filterExpiry = Utils.el('filterExpiry').value;
+  const today = Utils.today();
+
+  let dcps = DB.all('dcp_headers');
+  if (q) {
+    dcps = dcps.filter(d =>
+      (d.dcp_id || '').toLowerCase().includes(q) ||
+      (d.so_number || '').toLowerCase().includes(q) ||
+      (d.matnr || '').toLowerCase().includes(q) ||
+      (d.color_code || '').toLowerCase().includes(q) ||
+      (d.maktx || '').toLowerCase().includes(q) ||
+      DB.getBuyerName(d.buyer_id).toLowerCase().includes(q)
+    );
+  }
+  if (filterStatus) dcps = dcps.filter(d => d.status === filterStatus);
+  if (filterExpiry === 'soon') {
+    dcps = dcps.filter(d => d.status === DCP_HDR_STATUS.OPEN &&
+      d.reminder_date && d.reminder_date <= today && (!d.expire_date || d.expire_date >= today));
+  } else if (filterExpiry === 'expired') {
+    dcps = dcps.filter(d => d.status === DCP_HDR_STATUS.OPEN &&
+      d.expire_date && d.expire_date < today);
+  }
+
+  dcps.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  Utils.setText('totalInfo', `${dcps.length} DCP`);
+
+  if (dcps.length === 0) {
+    Utils.setHtml('tableWrap', `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-flask"></i></div>
+        <div class="empty-state-title">Belum ada DCP</div>
+        <div class="empty-state-text">DCP otomatis dibuat saat Admin approve Request-DCP.</div>
+      </div>
+    `);
+    return;
+  }
+
+  let rows = '';
+  for (const d of dcps) {
+    const isExpired = d.expire_date && d.expire_date < today && d.status === DCP_HDR_STATUS.OPEN;
+    const isReminder = d.reminder_date && d.reminder_date <= today && !isExpired && d.status === DCP_HDR_STATUS.OPEN;
+    const progress = d.qty_total > 0 ? Math.round((d.qty_approved / d.qty_total) * 100) : 0;
+    const color = DB.find('color_codes', 'color_code', d.color_code);
+    const hex = color ? color.color_hex : '#E2E8F0';
+
+    const expiryCell = isExpired
+      ? `<div class="badge badge-danger">Expired</div><div class="text-sm text-muted">${Utils.formatDate(d.expire_date)}</div>`
+      : isReminder
+        ? `<div class="badge badge-warning">Reminder</div><div class="text-sm text-muted">${Utils.formatDate(d.expire_date)}</div>`
+        : `<div class="text-sm">${d.expire_date ? Utils.formatDate(d.expire_date) : '-'}</div>`;
+
+    rows += `
+      <tr>
+        <td class="text-mono" style="font-weight:700;">${Utils.escapeHtml(d.dcp_id)}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="color-swatch" style="background:${Utils.escapeHtml(hex)};"></span>
+            <div>
+              <div class="text-mono text-sm" style="font-weight:600;">${Utils.escapeHtml(d.color_code)}</div>
+              <div class="text-sm text-muted">${Utils.escapeHtml(d.matnr)}</div>
+            </div>
+          </div>
+        </td>
+        <td>${Utils.escapeHtml(DB.getBuyerName(d.buyer_id))}</td>
+        <td class="text-mono text-sm">${Utils.escapeHtml(d.so_number)}</td>
+        <td>
+          <div class="text-sm">
+            <strong>${d.qty_approved}</strong> / ${d.qty_total} approved
+            ${d.qty_rejected > 0 ? `<span class="text-muted">(${d.qty_rejected} rej)</span>` : ''}
+          </div>
+          <div style="height:6px;background:var(--color-gray-200);border-radius:3px;margin-top:4px;overflow:hidden;">
+            <div style="height:100%;width:${progress}%;background:var(--color-success);"></div>
+          </div>
+        </td>
+        <td>${expiryCell}</td>
+        <td>${Utils.dcpHdrBadge(d.status)}</td>
+        <td class="text-right">
+          <a href="dcp_detail.html?id=${encodeURIComponent(d.dcp_id)}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-eye"></i> Detail
+          </a>
+        </td>
+      </tr>
+    `;
+  }
+
+  Utils.setHtml('tableWrap', `
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>DCP ID</th>
+            <th>Color / Material</th>
+            <th>Buyer</th>
+            <th>SO</th>
+            <th>Progress Panel</th>
+            <th>Expired</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `);
+}
+
+</script>
+</body>
+</html>

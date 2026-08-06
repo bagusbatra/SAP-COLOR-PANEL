@@ -1,0 +1,36 @@
+Potongan HEAD bersama untuk aplikasi BSP ZBSP_COLOR_PANEL
+=========================================================
+
+Disalin ke bagian <head> setiap halaman. Bukan include BSP: BSP di 1809
+tidak punya mekanisme partial yang nyaman untuk konten bercampur ABAP,
+jadi menyalin adalah pilihan sadar. Konsekuensinya, setiap perubahan di
+file ini harus disebar manual ke kedelapan halaman.
+
+Tiga warna di tailwind.config disalin dari design token prototype
+(prototype/assets/css/style.css baris 8-10) supaya BSP dan prototype
+terlihat sebagai satu aplikasi yang sama saat dibandingkan berdampingan.
+
+ATURAN: nol karakter non-ASCII. Pakai HTML entity (&mdash; &#8226; &#10003;).
+
+--- SALIN MULAI BARIS BERIKUT ---
+
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        navy:      '#1E3A8A',
+        navydark:  '#1E293B',
+        navylight: '#3B4E9E'
+      }
+    }
+  }
+}
+</script>
+
+--- SALIN SAMPAI BARIS DI ATAS ---

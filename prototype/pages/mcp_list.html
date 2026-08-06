@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCP List &mdash; Color Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="../assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="page-header" id="page-header"></div>
+    <div class="page-content">
+
+      <div class="stats-grid" id="stats"></div>
+
+      <div class="card mb-4">
+        <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <input type="text" id="searchInput" class="form-control"
+              placeholder="Cari MCP ID, color code, material, buyer...">
+          </div>
+          <select id="filterStatus" class="form-control" style="max-width:180px;">
+            <option value="">Semua Status</option>
+            <option value="O">Open</option>
+            <option value="A">Closed (Released)</option>
+          </select>
+          <select id="filterRenewal" class="form-control" style="max-width:180px;">
+            <option value="">Semua</option>
+            <option value="original">Original</option>
+            <option value="renewed_by">Sudah di-renewal</option>
+            <option value="is_renewal">Hasil Renewal</option>
+          </select>
+          <a href="mcp_renewal.html" class="btn btn-primary" id="btnRenewal">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>Renewal MCP</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-box-archive"></i>
+            Daftar MCP (Master Color Panel)
+          </h3>
+          <span class="text-muted text-sm" id="totalInfo"></span>
+        </div>
+        <div id="tableWrap">
+          <div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuat...</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/db.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/biz.js"></script>
+<script src="../assets/js/sidebar.js"></script>
+<script>
+
+if (Auth.guard([ROLES.ADMIN, ROLES.QC, ROLES.IT])) {
+  Sidebar.render();
+  Sidebar.renderHeader('MCP List', 'Daftar Master Color Panel — panel master warna hidup');
+
+  /* Renewal hanya ADMIN & IT — QC tidak boleh (samakan dgn guard mcp_renewal) */
+  if (!Auth.hasAnyRole([ROLES.ADMIN, ROLES.IT])) {
+    Utils.hide('btnRenewal');
+  }
+
+  renderStats();
+  renderTable();
+
+  Utils.el('searchInput').addEventListener('input', Utils.debounce(renderTable, 200));
+  Utils.el('filterStatus').addEventListener('change', renderTable);
+  Utils.el('filterRenewal').addEventListener('change', renderTable);
+}
+
+function renderStats() {
+  const all = DB.all('mcp_headers');
+  const open = all.filter(m => m.status === MCP_HDR_STATUS.OPEN).length;
+  const closed = all.filter(m => m.status === MCP_HDR_STATUS.CLOSED && m.is_renewed !== 'X').length;
+  const renewed = all.filter(m => m.is_renewed === 'X').length;
+  const today = Utils.today();
+  const expiringSoon = all.filter(m =>
+    m.status === MCP_HDR_STATUS.CLOSED &&
+    m.is_renewed !== 'X' &&
+    m.expire_date &&
+    Utils.daysBetween(today, m.expire_date) <= 60 &&
+    m.expire_date >= today
+  ).length;
+
+  Utils.setHtml('stats', `
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-navy"><i class="fa-solid fa-box-archive"></i></div>
+      <div><div class="stat-value">${open}</div><div class="stat-label">MCP Open</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-success"><i class="fa-solid fa-shield-halved"></i></div>
+      <div><div class="stat-value">${closed}</div><div class="stat-label">Released (Hidup)</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-warning"><i class="fa-solid fa-hourglass-half"></i></div>
+      <div><div class="stat-value">${expiringSoon}</div><div class="stat-label">Akan Expired &lt;60hr</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-danger"><i class="fa-solid fa-arrows-rotate"></i></div>
+      <div><div class="stat-value">${renewed}</div><div class="stat-label">Sudah di-Renewal</div></div>
+    </div>
+  `);
+}
+
+function renderTable() {
+  const q = Utils.el('searchInput').value.toLowerCase().trim();
+  const filterStatus = Utils.el('filterStatus').value;
+  const filterRenewal = Utils.el('filterRenewal').value;
+
+  let mcps = DB.all('mcp_headers');
+
+  if (q) {
+    mcps = mcps.filter(m =>
+      (m.mcp_id || '').toLowerCase().includes(q) ||
+      (m.dcp_id || '').toLowerCase().includes(q) ||
+      (m.color_code || '').toLowerCase().includes(q) ||
+      (m.matnr || '').toLowerCase().includes(q) ||
+      (m.maktx || '').toLowerCase().includes(q) ||
+      DB.getBuyerName(m.buyer_id).toLowerCase().includes(q)
+    );
+  }
+  if (filterStatus) mcps = mcps.filter(m => m.status === filterStatus);
+  if (filterRenewal === 'original') mcps = mcps.filter(m => m.is_renewed !== 'X' && !m.parent_mcp_id);
+  if (filterRenewal === 'renewed_by') mcps = mcps.filter(m => m.is_renewed === 'X');
+  if (filterRenewal === 'is_renewal') mcps = mcps.filter(m => m.parent_mcp_id);
+
+  mcps.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  Utils.setText('totalInfo', `${mcps.length} MCP`);
+
+  if (mcps.length === 0) {
+    Utils.setHtml('tableWrap', `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-box-open"></i></div>
+        <div class="empty-state-title">Belum ada MCP</div>
+        <div class="empty-state-text">MCP otomatis dibuat saat panel DCP pertama di-approve.</div>
+      </div>
+    `);
+    return;
+  }
+
+  const today = Utils.today();
+
+  let rows = '';
+  for (const m of mcps) {
+    const items = DB.filter('mcp_items', p => p.mcp_id === m.mcp_id);
+    const progress = m.qty_total > 0 ? Math.round((m.qty_approved / m.qty_total) * 100) : 0;
+    const color = DB.find('color_codes', 'color_code', m.color_code);
+    const hex = color ? color.color_hex : '#E2E8F0';
+
+    const isExpired = m.expire_date && m.expire_date < today;
+    const daysToExpire = m.expire_date ? Utils.daysBetween(today, m.expire_date) : null;
+
+    let expireCell = '-';
+    if (m.expire_date) {
+      if (m.is_renewed === 'X') {
+        expireCell = `<div class="badge badge-neutral">Di-renewal</div>`;
+      } else if (isExpired) {
+        expireCell = `<div class="badge badge-danger">Expired</div><div class="text-sm text-muted">${Utils.formatDate(m.expire_date)}</div>`;
+      } else if (daysToExpire <= 60) {
+        expireCell = `<div class="badge badge-warning">${daysToExpire} hari lagi</div><div class="text-sm text-muted">${Utils.formatDate(m.expire_date)}</div>`;
+      } else {
+        expireCell = `<div class="text-sm">${Utils.formatDate(m.expire_date)}</div>`;
+      }
+    }
+
+    let statusBadge = Utils.mcpHdrBadge(m.status);
+    if (m.is_renewed === 'X') {
+      statusBadge = '<span class="badge badge-neutral">Obsolete (Renewed)</span>';
+    }
+
+    const renewalIcon = m.parent_mcp_id
+      ? `<i class="fa-solid fa-arrows-rotate text-muted" title="Hasil Renewal dari ${Utils.escapeHtml(m.parent_mcp_id)}"></i>`
+      : '';
+
+    rows += `
+      <tr>
+        <td>
+          <div class="text-mono" style="font-weight:700;">${Utils.escapeHtml(m.mcp_id)} ${renewalIcon}</div>
+          ${m.dcp_id ? `<div class="text-sm text-muted">dari <span class="text-mono">${Utils.escapeHtml(m.dcp_id)}</span></div>` : ''}
+        </td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="color-swatch" style="background:${Utils.escapeHtml(hex)};"></span>
+            <div>
+              <div class="text-mono text-sm" style="font-weight:600;">${Utils.escapeHtml(m.color_code)}</div>
+              <div class="text-sm text-muted">${Utils.escapeHtml(m.matnr)}</div>
+            </div>
+          </div>
+        </td>
+        <td>${Utils.escapeHtml(DB.getBuyerName(m.buyer_id))}</td>
+        <td>
+          <div class="text-sm">
+            <strong>${m.qty_approved}</strong> / ${m.qty_total} approved
+            ${m.qty_obsolete > 0 ? `<span class="text-muted">(${m.qty_obsolete} obs)</span>` : ''}
+          </div>
+          <div style="height:6px;background:var(--color-gray-200);border-radius:3px;margin-top:4px;overflow:hidden;">
+            <div style="height:100%;width:${progress}%;background:var(--color-success);"></div>
+          </div>
+          <div class="text-sm text-muted mt-2">min ${CONFIG.MIN_APPROVE_MCP_CLOSE} untuk close</div>
+        </td>
+        <td>${expireCell}</td>
+        <td>${statusBadge}</td>
+        <td class="text-right">
+          <a href="mcp_detail.html?id=${encodeURIComponent(m.mcp_id)}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-eye"></i> Detail
+          </a>
+        </td>
+      </tr>
+    `;
+  }
+
+  Utils.setHtml('tableWrap', `
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>MCP ID</th>
+            <th>Color / Material</th>
+            <th>Buyer</th>
+            <th>Progress</th>
+            <th>Expired</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `);
+}
+</script>
+</body>
+</html>

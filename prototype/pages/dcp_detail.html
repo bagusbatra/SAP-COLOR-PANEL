@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCP Detail &mdash; Color Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="../assets/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  .panel-tile-actions {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .panel-tile:hover .panel-tile-actions { opacity: 1; }
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15,23,42,0.5);
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-box {
+    background: #fff; border-radius: 12px;
+    max-width: 640px; width: 100%; max-height: 90vh;
+    overflow: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal-header {
+    padding: 16px 24px; border-bottom: 1px solid var(--color-gray-200);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-body { padding: 24px; }
+  .modal-footer {
+    padding: 16px 24px; border-top: 1px solid var(--color-gray-200);
+    background: var(--color-gray-50);
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+  .photo-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .photo-preview-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--color-gray-300);
+  }
+  .photo-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-preview-remove {
+    position: absolute; top: 4px; right: 4px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(239,68,68,0.9); color: #fff;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main">
+    <div class="page-header" id="page-header"></div>
+    <div class="page-content" id="content">
+      <div class="table-empty">
+        <i class="fa-solid fa-spinner fa-spin"></i> Memuat DCP...
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/db.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/biz.js"></script>
+<script src="../assets/js/sticker.js"></script>
+<script src="../assets/js/sidebar.js"></script>
+<script>
+
+let currentDcpId = null;
+let currentPanelNumber = null;
+let stagedPhotos = []; // buffer foto sebelum submit
+
+if (Auth.guard([ROLES.ADMIN, ROLES.QC, ROLES.IT])) {
+  Sidebar.render();
+  currentDcpId = Utils.getParam('id');
+  if (!currentDcpId) {
+    Utils.alertError('Parameter Hilang', 'DCP ID tidak ditemukan').then(() =>
+      Utils.redirect('pages/dcp_list.html'));
+  } else render();
+}
+
+/* ============================================================
+ * RENDER MAIN
+ * ============================================================ */
+function render() {
+  const dcp = DB.find('dcp_headers', 'dcp_id', currentDcpId);
+  if (!dcp) {
+    Sidebar.renderHeader('DCP Detail', 'Not found');
+    Utils.setHtml('content', `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="empty-state-title">DCP tidak ditemukan</div>
+      </div>`);
+    return;
+  }
+
+  const canEdit = Auth.hasRole(ROLES.ADMIN);
+  const isOpen = dcp.status === DCP_HDR_STATUS.OPEN;
+  const color = DB.find('color_codes', 'color_code', dcp.color_code);
+  const items = DB.filter('dcp_items', p => p.dcp_id === currentDcpId)
+    .sort((a, b) => a.panel_number - b.panel_number);
+
+  Sidebar.renderHeader(
+    `DCP ${dcp.dcp_id}`,
+    `${dcp.color_code} — ${dcp.matnr} — ${DB.getBuyerName(dcp.buyer_id)}`
+  );
+
+  /* Header actions */
+  let headerActions = `
+    <a href="dcp_list.html" class="btn btn-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Kembali
+    </a>
+    <button class="btn btn-secondary btn-sm" onclick="printBulkStickers()" title="Cetak semua stiker DCP">
+      <i class="fa-solid fa-print"></i> Bulk Stiker
+    </button>
+  `;
+  if (canEdit && isOpen) {
+    headerActions += `
+      <button class="btn btn-danger btn-sm" onclick="rejectHeader()">
+        <i class="fa-solid fa-times"></i> Reject DCP
+      </button>
+      <button class="btn btn-success btn-sm" onclick="closeHeader()">
+        <i class="fa-solid fa-lock"></i> Close DCP
+      </button>
+    `;
+  }
+  Utils.setHtml('page-header-actions', headerActions);
+
+  const today = Utils.today();
+  const isExpired = dcp.expire_date && dcp.expire_date < today;
+  const isReminder = dcp.reminder_date && dcp.reminder_date <= today && !isExpired;
+  const canClose = items.filter(p => p.status === DCP_PANEL_STATUS.APPROVED).length >= CONFIG.MIN_APPROVE_DCP_CLOSE;
+
+  let alertBar = '';
+  if (isOpen && isExpired) {
+    alertBar = `<div class="card mb-4" style="background:#FEE2E2;border:1px solid #EF4444;">
+      <div class="card-body" style="display:flex;gap:12px;align-items:center;">
+        <i class="fa-solid fa-clock" style="color:#991B1B;font-size:20px;"></i>
+        <div style="flex:1;">
+          <div style="font-weight:700;color:#991B1B;">DCP sudah expired</div>
+          <div style="font-size:12px;color:#7F1D1D;">Expired ${Utils.formatDate(dcp.expire_date)}. Segera close atau reject.</div>
+        </div>
+      </div></div>`;
+  } else if (isOpen && isReminder) {
+    alertBar = `<div class="card mb-4" style="background:#FEF3C7;border:1px solid #F59E0B;">
+      <div class="card-body" style="display:flex;gap:12px;align-items:center;">
+        <i class="fa-solid fa-bell" style="color:#78350F;font-size:20px;"></i>
+        <div style="flex:1;">
+          <div style="font-weight:700;color:#78350F;">Perlu Perhatian</div>
+          <div style="font-size:12px;color:#78350F;">Sudah 2 bulan sejak DCP dibuat. Segera tentukan status panel.</div>
+        </div>
+      </div></div>`;
+  }
+
+  /* Info card */
+  let content = `
+    ${alertBar}
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px;">
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fa-solid fa-info-circle"></i> Informasi DCP</h3>
+          ${Utils.dcpHdrBadge(dcp.status)}
+        </div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+            <div>
+              <div class="text-sm text-muted">Color Code</div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="color-swatch" style="background:${color ? color.color_hex : '#E2E8F0'};"></span>
+                <span class="text-mono" style="font-weight:600;">${Utils.escapeHtml(dcp.color_code)}</span>
+              </div>
+            </div>
+            <div>
+              <div class="text-sm text-muted">Material</div>
+              <div class="text-mono text-sm">${Utils.escapeHtml(dcp.matnr)}</div>
+              <div class="text-sm text-muted">${Utils.escapeHtml(dcp.maktx || '-')}</div>
+            </div>
+            <div>
+              <div class="text-sm text-muted">Buyer</div>
+              <div>${Utils.escapeHtml(DB.getBuyerName(dcp.buyer_id))}</div>
+            </div>
+            <div>
+              <div class="text-sm text-muted">SO Number</div>
+              <div class="text-mono">${Utils.escapeHtml(dcp.so_number)} <span class="text-muted text-sm">(item ${Utils.escapeHtml(dcp.so_item)})</span></div>
+            </div>
+            <div>
+              <div class="text-sm text-muted">MFG Date</div>
+              <div>${dcp.mfg_date ? Utils.formatDate(dcp.mfg_date) : '<span class="text-muted">Belum ada aktivasi</span>'}</div>
+            </div>
+            <div>
+              <div class="text-sm text-muted">Expired</div>
+              <div>${dcp.expire_date ? Utils.formatDate(dcp.expire_date) : '-'}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fa-solid fa-chart-simple"></i> Progress</h3>
+        </div>
+        <div class="card-body">
+          ${renderProgressBar(items, dcp.qty_total)}
+          ${isOpen && canEdit ? `
+            <div class="mt-4" style="padding:10px;background:${canClose ? '#D1FAE5' : '#FEF3C7'};border-radius:8px;font-size:12px;">
+              ${canClose
+                ? `<i class="fa-solid fa-check" style="color:#065F46;"></i> <strong>Siap di-close.</strong> Min ${CONFIG.MIN_APPROVE_DCP_CLOSE} panel approved terpenuhi.`
+                : `<i class="fa-solid fa-clock" style="color:#92400E;"></i> Butuh minimal <strong>${CONFIG.MIN_APPROVE_DCP_CLOSE} panel approved</strong> untuk close.`}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-th"></i> Panel Grid (${dcp.qty_total} slot)</h3>
+        <div class="text-sm text-muted">
+          <span style="color:var(--color-gray-500);">NA</span> Non-Aktif &middot;
+          <span style="color:var(--color-info);">AK</span> Aktif &middot;
+          <span style="color:var(--color-warning);">SB</span> Submitted &middot;
+          <span style="color:var(--color-success);">AP</span> Approved &middot;
+          <span style="color:var(--color-danger);">RJ</span> Rejected
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="panel-grid">
+          ${items.map(p => renderPanelTile(p, canEdit, isOpen)).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  Utils.setHtml('content', content);
+}
+
+/* ============================================================
+ * PROGRESS BAR
+ * ============================================================ */
+function renderProgressBar(items, total) {
+  const na = items.filter(p => p.status === DCP_PANEL_STATUS.NON_ACTIVE).length;
+  const ak = items.filter(p => p.status === DCP_PANEL_STATUS.ACTIVE).length;
+  const sb = items.filter(p => p.status === DCP_PANEL_STATUS.SUBMITTED).length;
+  const ap = items.filter(p => p.status === DCP_PANEL_STATUS.APPROVED).length;
+  const rj = items.filter(p => p.status === DCP_PANEL_STATUS.REJECTED).length;
+  const ob = items.filter(p => p.status === DCP_PANEL_STATUS.OBSOLETE).length;
+
+  const pct = s => total > 0 ? Math.round((s / total) * 100) : 0;
+
+  return `
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
+      <span><strong>${ap}</strong> / ${total} approved</span>
+      <span class="text-muted">${pct(ap)}%</span>
+    </div>
+    <div style="height:10px;background:var(--color-gray-200);border-radius:5px;overflow:hidden;display:flex;">
+      <div style="background:var(--color-success);width:${pct(ap)}%;" title="Approved: ${ap}"></div>
+      <div style="background:var(--color-warning);width:${pct(sb)}%;" title="Submitted: ${sb}"></div>
+      <div style="background:var(--color-info);width:${pct(ak)}%;" title="Active: ${ak}"></div>
+      <div style="background:var(--color-danger);width:${pct(rj)}%;" title="Rejected: ${rj}"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px;font-size:11px;">
+      <div><span class="badge badge-neutral">NA</span> ${na}</div>
+      <div><span class="badge badge-info">AK</span> ${ak}</div>
+      <div><span class="badge badge-warning">SB</span> ${sb}</div>
+      <div><span class="badge badge-success">AP</span> ${ap}</div>
+      <div><span class="badge badge-danger">RJ</span> ${rj}</div>
+      <div><span class="badge badge-neutral">OB</span> ${ob}</div>
+    </div>
+  `;
+}
+
+/* ============================================================
+ * PANEL TILE
+ * ============================================================ */
+function renderPanelTile(p, canEdit, isOpen) {
+  const canAction = canEdit && isOpen;
+  const clickAction = canAction ? `onclick="openPanelModal(${p.panel_number})"` : '';
+  return `
+    <div class="panel-tile status-${p.status}" ${clickAction} title="${Utils.escapeHtml(p.panel_id)}">
+      <div class="panel-tile-number">Panel #${String(p.panel_number).padStart(2, '0')}</div>
+      <div class="panel-tile-id">${Utils.escapeHtml(p.panel_id)}</div>
+      <div class="panel-tile-status">${Utils.dcpPanelBadge(p.status)}</div>
+      ${p.mfg_date ? `<div class="text-sm text-muted mt-2">${Utils.formatDate(p.mfg_date)}</div>` : ''}
+      ${p.photo_count > 0 ? `<div class="text-sm text-muted"><i class="fa-solid fa-image"></i> ${p.photo_count} foto</div>` : ''}
+    </div>
+  `;
+}
+
+/* ============================================================
+ * PANEL MODAL
+ * ============================================================ */
+function openPanelModal(panelNumber) {
+  currentPanelNumber = panelNumber;
+  stagedPhotos = [];
+  const panel = DB.filter('dcp_items', p =>
+    p.dcp_id === currentDcpId && p.panel_number === panelNumber)[0];
+  if (!panel) return;
+
+  const photos = DB.filter('photos', p =>
+    p.ref_type === 'DCP' && p.ref_id === currentDcpId && p.panel_number === panelNumber);
+
+  let bodyContent = '';
+  let footerButtons = `<button class="btn btn-secondary" onclick="closeModal()">Tutup</button>`;
+
+  /* --------- Info section --------- */
+  const showQr = panel.status !== DCP_PANEL_STATUS.NON_ACTIVE;
+  bodyContent += `
+    <div style="display:grid;grid-template-columns:${showQr ? '2fr 1fr' : '1fr'};gap:16px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div class="text-sm text-muted">Panel ID</div>
+          <div class="text-mono" style="font-weight:600;">${Utils.escapeHtml(panel.panel_id)}</div>
+        </div>
+        <div>
+          <div class="text-sm text-muted">Status</div>
+          <div>${Utils.dcpPanelBadge(panel.status)}</div>
+        </div>
+        ${panel.mfg_date ? `
+          <div>
+            <div class="text-sm text-muted">MFG Date</div>
+            <div>${Utils.formatDate(panel.mfg_date)}</div>
+          </div>
+        ` : ''}
+        ${panel.mcp_id ? `
+          <div>
+            <div class="text-sm text-muted">MCP ID (setelah approve)</div>
+            <div><a href="mcp_detail.html?id=${encodeURIComponent(panel.mcp_id)}" class="text-mono">${Utils.escapeHtml(panel.mcp_id)}</a></div>
+          </div>
+        ` : ''}
+      </div>
+      ${showQr ? `
+        <div style="text-align:center;">
+          <div id="qrPreview" style="display:inline-block;padding:8px;background:#fff;border:1px solid var(--color-gray-300);border-radius:6px;"></div>
+          <div class="text-sm text-muted mt-2">QR Panel</div>
+          <button class="btn btn-primary btn-sm mt-2" onclick="printSticker()" style="width:100%;">
+            <i class="fa-solid fa-print"></i> Cetak Stiker
+          </button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  /* --------- Existing photos --------- */
+  if (photos.length > 0) {
+    bodyContent += `
+      <div style="margin-bottom:16px;">
+        <div class="form-label">Foto yang sudah di-upload (${photos.length})</div>
+        <div class="photo-preview-grid">
+          ${photos.map(p => `
+            <div class="photo-preview-item">
+              <img src="${p.base64}" alt="${Utils.escapeHtml(p.file_name)}">
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  /* --------- Action per status --------- */
+  const canAction = Auth.hasRole(ROLES.ADMIN);
+  if (!canAction) {
+    bodyContent += `<div class="text-muted text-sm">Hanya ADMIN yang bisa melakukan aksi pada panel.</div>`;
+  } else if (panel.status === DCP_PANEL_STATUS.NON_ACTIVE) {
+    /* --- AKTIVASI --- */
+    bodyContent += `
+      <div class="form-group">
+        <label class="form-label form-label-required">Tanggal Dibuat (MFG Date)</label>
+        <input type="date" id="fMfgDate" class="form-control" value="${Utils.today()}">
+        <div class="form-help">Bebas isi tanggal — sesuai kapan panel dicat/dibuat</div>
+      </div>
+    `;
+    footerButtons = `
+      <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
+      <button class="btn btn-primary" onclick="doActivate()">
+        <i class="fa-solid fa-power-off"></i> Aktivasi Panel
+      </button>
+    `;
+  } else if (panel.status === DCP_PANEL_STATUS.ACTIVE) {
+    /* --- SUBMIT (upload foto) --- */
+    bodyContent += `
+      <div class="form-group">
+        <label class="form-label form-label-required">Upload Foto Panel (min ${CONFIG.MIN_PHOTO_PER_PANEL})</label>
+        <input type="file" id="fPhotos" class="form-control" accept="image/jpeg,image/png,image/jpg" multiple>
+        <div class="form-help">JPG atau PNG, max ${CONFIG.MAX_PHOTO_SIZE_MB} MB per file. Foto panel yang sudah ditandatangani (Buyer, RND, AkzoNobel).</div>
+      </div>
+      <div id="stagedPreview"></div>
+    `;
+    footerButtons = `
+      <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
+      <button class="btn btn-primary" onclick="doSubmit()">
+        <i class="fa-solid fa-paper-plane"></i> Submit Panel
+      </button>
+    `;
+  } else if (panel.status === DCP_PANEL_STATUS.SUBMITTED) {
+    /* --- APPROVE / REJECT --- */
+    bodyContent += `
+      <div style="padding:12px;background:#DBEAFE;border-radius:8px;font-size:13px;color:#1E40AF;margin-bottom:16px;">
+        <i class="fa-solid fa-info-circle"></i>
+        Approve panel ini akan otomatis meng-eskalasikannya menjadi <strong>MCP item</strong> (stiker DCP ditimpa dengan MCP).
+      </div>
+    `;
+    footerButtons = `
+      <button class="btn btn-secondary" onclick="closeModal()">Tutup</button>
+      <button class="btn btn-danger" onclick="doReject()">
+        <i class="fa-solid fa-times"></i> Reject
+      </button>
+      <button class="btn btn-success" onclick="doApprove()">
+        <i class="fa-solid fa-check"></i> Approve &rarr; MCP
+      </button>
+    `;
+  } else if (panel.status === DCP_PANEL_STATUS.APPROVED) {
+    bodyContent += `
+      <div style="padding:12px;background:#D1FAE5;border-radius:8px;font-size:13px;color:#065F46;">
+        <i class="fa-solid fa-check-circle"></i>
+        Panel sudah di-approve pada ${Utils.formatDateTime(panel.approved_at)}
+        oleh ${Utils.escapeHtml(DB.getUser(panel.approved_by)?.full_name || panel.approved_by)}.
+        ${panel.mcp_id ? `Sudah menjadi MCP <a href="mcp_detail.html?id=${encodeURIComponent(panel.mcp_id)}" class="text-mono">${Utils.escapeHtml(panel.mcp_id)}</a>.` : ''}
+      </div>
+    `;
+  } else if (panel.status === DCP_PANEL_STATUS.REJECTED) {
+    bodyContent += `
+      <div style="padding:12px;background:#FEE2E2;border-radius:8px;font-size:13px;color:#991B1B;margin-bottom:12px;">
+        <div style="font-weight:700;margin-bottom:4px;"><i class="fa-solid fa-times-circle"></i> Panel di-reject</div>
+        <div>Oleh: ${Utils.escapeHtml(DB.getUser(panel.rejected_by)?.full_name || panel.rejected_by)}</div>
+        <div>Pada: ${Utils.formatDateTime(panel.rejected_at)}</div>
+        ${panel.reject_reason ? `<div style="margin-top:6px;"><strong>Alasan:</strong> ${Utils.escapeHtml(panel.reject_reason)}</div>` : ''}
+      </div>
+    `;
+    footerButtons = `
+      <button class="btn btn-secondary" onclick="closeModal()">Tutup</button>
+      <button class="btn btn-warning" onclick="doUndo()">
+        <i class="fa-solid fa-rotate-left"></i> Undo Reject
+      </button>
+    `;
+  }
+
+  /* Render modal */
+  Utils.setHtml('modalContainer', `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 style="margin:0;font-size:16px;font-weight:700;">
+            Panel #${String(panelNumber).padStart(2, '0')} — ${Utils.escapeHtml(panel.panel_id)}
+          </h3>
+          <button class="btn btn-secondary btn-icon" onclick="closeModal()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body">${bodyContent}</div>
+        <div class="modal-footer">${footerButtons}</div>
+      </div>
+    </div>
+  `);
+
+  /* Attach file listener (kalau ada input file) */
+  const fInput = Utils.el('fPhotos');
+  if (fInput) fInput.addEventListener('change', handlePhotoSelect);
+
+  /* Render QR preview kalau panel sudah aktif */
+  if (panel.status !== DCP_PANEL_STATUS.NON_ACTIVE) {
+    setTimeout(() => {
+      const qrText = JSON.stringify({
+        type: 'DCP', panel_id: panel.panel_id, token: panel.qr_token
+      });
+      Sticker.renderQrTo('qrPreview', qrText, 120);
+    }, 50);
+  }
+}
+
+async function printSticker() {
+  Utils.toastInfo('Generating stiker PDF...');
+  await Sticker.generatePanelSticker('DCP', currentDcpId, currentPanelNumber);
+  Utils.toastSuccess('Stiker di-download');
+}
+
+async function printBulkStickers() {
+  const items = DB.filter('dcp_items', p => p.dcp_id === currentDcpId);
+  Utils.confirm('Cetak Bulk Stiker?',
+    `Akan menghasilkan PDF berisi ${items.length} stiker (${items.length} halaman A6).`,
+    'Ya, cetak').then(async r => {
+    if (!r.isConfirmed) return;
+    Utils.toastInfo('Generating PDF... (mungkin butuh beberapa detik)');
+    await Sticker.generateBulkStickers('DCP', currentDcpId);
+    Utils.toastSuccess('Bulk stiker di-download');
+  });
+}
+
+function closeModal() {
+  Utils.setHtml('modalContainer', '');
+  stagedPhotos = [];
+  currentPanelNumber = null;
+}
+
+/* ============================================================
+ * PHOTO STAGING
+ * ============================================================ */
+async function handlePhotoSelect(e) {
+  const files = Array.from(e.target.files);
+  for (const f of files) {
+    const v = Utils.validateImageFile(f);
+    if (!v.valid) {
+      Utils.toastError(`${f.name}: ${v.msg}`);
+      continue;
+    }
+    const base64 = await Utils.fileToBase64(f);
+    stagedPhotos.push({ name: f.name, base64: base64 });
+  }
+  renderStagedPreview();
+  e.target.value = '';
+}
+
+function renderStagedPreview() {
+  const container = Utils.el('stagedPreview');
+  if (!container) return;
+  if (stagedPhotos.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = `
+    <div class="form-label mt-4">Foto siap upload (${stagedPhotos.length})</div>
+    <div class="photo-preview-grid">
+      ${stagedPhotos.map((p, i) => `
+        <div class="photo-preview-item">
+          <img src="${p.base64}" alt="${Utils.escapeHtml(p.name)}">
+          <button class="photo-preview-remove" onclick="removeStaged(${i})">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function removeStaged(idx) {
+  stagedPhotos.splice(idx, 1);
+  renderStagedPreview();
+}
+
+/* ============================================================
+ * ACTIONS
+ * ============================================================ */
+function doActivate() {
+  const mfgDate = Utils.el('fMfgDate').value;
+  if (!mfgDate) return Utils.toastWarning('Tanggal wajib diisi');
+  const res = Biz.activateDcpPanel(currentDcpId, currentPanelNumber, mfgDate);
+  if (!res.ok) return Utils.alertError('Gagal Aktivasi', res.msg);
+  Utils.toastSuccess('Panel diaktivasi');
+  closeModal();
+  render();
+}
+
+function doSubmit() {
+  if (stagedPhotos.length < CONFIG.MIN_PHOTO_PER_PANEL) {
+    return Utils.toastWarning(`Minimal ${CONFIG.MIN_PHOTO_PER_PANEL} foto`);
+  }
+  const res = Biz.submitDcpPanel(currentDcpId, currentPanelNumber, stagedPhotos);
+  if (!res.ok) return Utils.alertError('Gagal Submit', res.msg);
+  Utils.toastSuccess(`${stagedPhotos.length} foto disimpan ke DMS ZDCP (simulasi)`);
+  closeModal();
+  render();
+}
+
+function doApprove() {
+  Utils.confirm(
+    'Approve Panel?',
+    'Panel akan naik menjadi MCP item dan stiker DCP ditimpa dengan MCP.',
+    'Ya, approve'
+  ).then(r => {
+    if (!r.isConfirmed) return;
+    const res = Biz.approveDcpPanel(currentDcpId, currentPanelNumber);
+    if (!res.ok) return Utils.alertError('Gagal Approve', res.msg);
+    Utils.toastSuccess(`Panel approved → MCP ${res.mcp_id}`);
+    closeModal();
+    render();
+  });
+}
+
+function doReject() {
+  Utils.prompt('Reject Panel?', 'Alasan reject panel...', 'Alasan').then(r => {
+    if (!r.isConfirmed || !r.value) return;
+    const res = Biz.rejectDcpPanel(currentDcpId, currentPanelNumber, r.value);
+    if (!res.ok) return Utils.alertError('Gagal Reject', res.msg);
+    Utils.toastSuccess('Panel di-reject');
+    closeModal();
+    render();
+  });
+}
+
+function doUndo() {
+  Utils.confirm(
+    'Undo Reject?',
+    'Panel akan dikembalikan ke status SUBMITTED sehingga bisa di-approve/reject lagi.',
+    'Ya, undo'
+  ).then(r => {
+    if (!r.isConfirmed) return;
+    const res = Biz.undoDcpPanel(currentDcpId, currentPanelNumber);
+    if (!res.ok) return Utils.alertError('Gagal Undo', res.msg);
+    Utils.toastSuccess('Panel dikembalikan ke SUBMITTED');
+    closeModal();
+    render();
+  });
+}
+
+/* ============================================================
+ * HEADER ACTIONS
+ * ============================================================ */
+function closeHeader() {
+  const items = DB.filter('dcp_items', p => p.dcp_id === currentDcpId);
+  const approved = items.filter(p => p.status === DCP_PANEL_STATUS.APPROVED).length;
+
+  Utils.confirm(
+    'Close DCP?',
+    `${approved} panel approved akan lanjut sebagai MCP. Panel lain akan tetap seperti apa adanya. DCP tidak bisa dibuka lagi setelah closed.`,
+    'Ya, close'
+  ).then(r => {
+    if (!r.isConfirmed) return;
+    const res = Biz.closeDcpHeader(currentDcpId);
+    if (!res.ok) return Utils.alertError('Gagal Close', res.msg);
+    Utils.alertSuccess('DCP Closed', `${res.approved} panel approved lanjut ke MCP.`).then(render);
+  });
+}
+
+function rejectHeader() {
+  Utils.prompt('Reject Seluruh DCP?',
+    'Alasan (misal: buyer tidak jadi beli)...', 'Alasan').then(r => {
+    if (!r.isConfirmed || !r.value) return;
+    const res = Biz.rejectDcpHeader(currentDcpId, r.value);
+    if (!res.ok) return Utils.alertError('Gagal Reject', res.msg);
+    Utils.toastSuccess('DCP di-reject. Panel yang belum approved menjadi OBSOLETE.');
+    render();
+  });
+}
+
+</script>
+
+<div id="modalContainer"></div>
+
+</body>
+</html>
