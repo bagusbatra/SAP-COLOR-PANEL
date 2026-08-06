@@ -1,0 +1,54 @@
+Type Definitions untuk req_list.htm
+===================================
+
+DIPASTE ke tab "Type Definitions" di SE80.
+
+--- SALIN MULAI BARIS BERIKUT ---
+
+TYPES: BEGIN OF ty_reqrow,
+         request_id   TYPE zcp_de_request_id,
+         so_number    TYPE vbeln,
+         buyer_id     TYPE zcp_de_buyer_id,
+         buyer_name   TYPE zcp_buyer-buyer_name,
+         request_date TYPE datum,
+         status       TYPE zcp_de_req_st,
+         sales_user   TYPE zcp_de_user_id,
+         remarks      TYPE zcp_de_remarks,
+         cnt_total    TYPE i,
+         cnt_pending  TYPE i,
+         cnt_appr     TYPE i,
+         cnt_rej      TYPE i,
+       END OF ty_reqrow.
+
+TYPES: BEGIN OF ty_itmstat,
+         request_id TYPE zcp_de_request_id,
+         status     TYPE zcp_de_itm_st,
+       END OF ty_itmstat.
+
+TYPES: BEGIN OF ty_buyer,
+         buyer_id   TYPE zcp_de_buyer_id,
+         buyer_name TYPE zcp_buyer-buyer_name,
+       END OF ty_buyer.
+
+TYPES: tt_reqrow  TYPE STANDARD TABLE OF ty_reqrow  WITH DEFAULT KEY,
+       tt_itmstat TYPE STANDARD TABLE OF ty_itmstat WITH DEFAULT KEY,
+       tt_buyer   TYPE STANDARD TABLE OF ty_buyer   WITH DEFAULT KEY.
+
+--- SALIN SAMPAI BARIS DI ATAS ---
+
+
+Kenapa ada empat penghitung item
+--------------------------------
+
+cnt_total, cnt_pending, cnt_appr, cnt_rej.
+
+Status header ZCP_REQUEST hanya mengenal P (Pending) dan C (Closed).
+Itu tidak cukup memberi tahu Admin apa yang sebenarnya terjadi: request
+berstatus C bisa berarti semua materialnya disetujui, semuanya ditolak,
+atau sebagian-sebagian. Perbedaan itu penting justru karena sistem ini
+memakai partial approve.
+
+Keempat penghitung dibaca dari ZCP_REQUEST_ITM, bukan disimpan di
+header. Menyimpannya di header berarti ada dua sumber kebenaran yang
+harus dijaga tetap sama, dan yang salah akan tetap dipercaya karena
+kelihatan lebih dekat.

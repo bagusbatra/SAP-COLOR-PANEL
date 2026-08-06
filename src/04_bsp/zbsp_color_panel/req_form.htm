@@ -1,0 +1,199 @@
+<%@page language="abap"%>
+<html>
+<head>
+<title>Request Baru &mdash; Color Panel</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<script>
+tailwind.config = { theme: { extend: { colors: {
+  navy: '#1E3A8A', navydark: '#1E293B', navylight: '#3B4E9E' } } } }
+</script>
+</head>
+<body class="bg-slate-100">
+<div class="flex">
+
+<aside class="w-64 bg-navydark text-white flex flex-col min-h-screen">
+  <div class="px-5 py-5 border-b border-white border-opacity-10">
+    <div class="text-lg font-bold">Color Panel</div>
+    <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
+  </div>
+  <nav class="flex-1 py-3">
+
+    <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-gauge w-4"></i> Dashboard
+    </a>
+
+    <% IF gv_as_sales = 'X' OR gv_as_admin = 'X'. %>
+    <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white">
+      <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
+    </a>
+    <% ENDIF. %>
+
+    <% IF gv_as_admin = 'X' OR gv_as_qc = 'X'. %>
+    <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-flask w-4"></i> DCP
+    </a>
+    <% ENDIF. %>
+
+    <% IF gv_as_it = 'X'. %>
+    <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-users w-4"></i> User
+    </a>
+    <% ENDIF. %>
+
+  </nav>
+  <div class="px-5 py-4 border-t border-white border-opacity-10">
+    <div class="text-sm font-semibold text-white"><%= gv_user_name %></div>
+    <div class="text-xs text-gray-400"><%= gv_user_id %> &middot; <%= gv_role %></div>
+  </div>
+</aside>
+
+<main class="flex-1">
+
+  <div class="bg-white border-b border-slate-200 px-8 py-5">
+    <h1 class="text-2xl font-bold text-slate-800">Request DCP Baru</h1>
+    <p class="text-sm text-slate-500">
+      Masukkan nomor Sales Order, sistem menarik materialnya dari VBAK/VBAP
+    </p>
+  </div>
+
+  <div class="p-8">
+
+    <% IF gv_error IS NOT INITIAL. %>
+    <div class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+      <i class="fa-solid fa-circle-exclamation"></i> <%= gv_error %>
+    </div>
+    <% ENDIF. %>
+
+    <% IF gv_info IS NOT INITIAL. %>
+    <div class="mb-4 px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-200 text-sm text-emerald-800">
+      <i class="fa-solid fa-circle-check"></i> <%= gv_info %>
+      <a href="req_list.htm" class="underline font-medium ml-1">Lihat daftar request</a>
+    </div>
+    <% ENDIF. %>
+
+    <form method="post">
+
+      <div class="bg-white rounded-xl shadow-sm p-5 mb-5">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Nomor Sales Order</label>
+        <div class="flex gap-3 items-start">
+          <div>
+            <input type="text" name="so_number" value="<%= gv_so_number %>"
+                   class="w-64 px-3 py-2 border border-slate-300 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-navy"/>
+            <div class="text-xs text-slate-400 mt-1">
+              Boleh diketik tanpa nol di depan &mdash; 12345 sama dengan 0000012345
+            </div>
+          </div>
+          <button type="submit" name="onInputProcessing" value="lookup"
+                  class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <i class="fa-solid fa-magnifying-glass"></i> Cari SO
+          </button>
+        </div>
+
+        <% IF gv_found = 'X'. %>
+        <div class="mt-4 pt-4 border-t border-slate-200 grid grid-cols-3 gap-4 text-sm">
+          <div>
+            <div class="text-xs text-slate-500">Nomor SO</div>
+            <div class="font-mono font-semibold"><%= gv_so_number %></div>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500">Pelanggan (KUNNR)</div>
+            <div class="font-mono"><%= gv_so_kunnr %></div>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500">Buyer</div>
+            <div><%= gv_so_name %></div>
+          </div>
+        </div>
+        <% ENDIF. %>
+      </div>
+
+      <% IF gv_found = 'X'. %>
+
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-5">
+        <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="font-bold text-slate-800">Material di SO ini</h2>
+          <div class="text-sm">
+            <span class="px-2 py-1 rounded bg-emerald-100 text-emerald-800"><%= gv_cnt_ok %> layak</span>
+          </div>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-slate-600">
+            <tr>
+              <th class="text-left px-5 py-3 font-semibold">Item</th>
+              <th class="text-left px-5 py-3 font-semibold">Material</th>
+              <th class="text-left px-5 py-3 font-semibold">Deskripsi</th>
+              <th class="text-right px-5 py-3 font-semibold">Qty</th>
+              <th class="text-left px-5 py-3 font-semibold">Kelayakan</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <% DATA: ls_i TYPE ty_soitem. %>
+            <% LOOP AT gt_items INTO ls_i. %>
+            <tr <% IF ls_i-eligible IS INITIAL. %>class="bg-slate-50 text-slate-400"<% ENDIF. %>>
+              <td class="px-5 py-3 font-mono"><%= ls_i-posnr %></td>
+              <td class="px-5 py-3 font-mono"><%= ls_i-matnr %></td>
+              <td class="px-5 py-3"><%= ls_i-maktx %></td>
+              <td class="px-5 py-3 text-right font-mono">
+                <%= ls_i-kwmeng %> <%= ls_i-vrkme %>
+              </td>
+              <td class="px-5 py-3">
+                <% IF ls_i-eligible = 'X'. %>
+                  <span class="px-2 py-1 rounded text-xs bg-emerald-100 text-emerald-800">
+                    <i class="fa-solid fa-check"></i> Layak
+                  </span>
+                <% ELSE. %>
+                  <span class="px-2 py-1 rounded text-xs bg-red-100 text-red-800"><%= ls_i-reason %></span>
+                <% ENDIF. %>
+              </td>
+            </tr>
+            <% ENDLOOP. %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm p-5 mb-5">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Remarks</label>
+        <textarea name="remarks" rows="3"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"><%= gv_remarks %></textarea>
+        <div class="text-xs text-slate-400 mt-1">
+          Catatan untuk Admin, misalnya target kirim atau permintaan khusus buyer
+        </div>
+      </div>
+
+      <div class="flex gap-3 items-center">
+        <% IF gv_cnt_ok > 0. %>
+        <button type="submit" name="onInputProcessing" value="submit"
+                class="bg-navy hover:bg-navylight text-white px-5 py-2 rounded-lg text-sm font-medium">
+          <i class="fa-solid fa-paper-plane"></i> Submit Request
+        </button>
+        <% ENDIF. %>
+        <a href="req_list.htm" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-2 rounded-lg text-sm font-medium">
+          Batal
+        </a>
+        <span class="text-xs text-slate-500">
+          Hanya material berlabel <strong>Layak</strong> yang ikut disubmit.
+        </span>
+      </div>
+
+      <% ENDIF. %>
+
+    </form>
+
+    <div class="mt-6 px-4 py-3 rounded-lg bg-slate-50 border-l-4 border-navy text-xs text-slate-600">
+      <strong>Dua sebab material bisa tidak layak.</strong>
+      <em>Sudah punya Color Code</em> berarti materialnya memang sudah pernah
+      dibuatkan panel &mdash; perpanjangannya lewat halaman Renewal, bukan dari sini.
+      <em>Sudah pernah di-import dari SO ini</em> berarti SO yang sama pernah
+      diproses sebelumnya. Keduanya dibedakan karena tindak lanjutnya berbeda.
+    </div>
+
+  </div>
+</main>
+
+</div>
+</body>
+</html>

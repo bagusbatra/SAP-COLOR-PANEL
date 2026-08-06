@@ -4,6 +4,7 @@ Satu file per tanggal, format nama `YYYY-MM-DD.md` supaya urut sendiri di file e
 
 | Tanggal | Hari | Fokus | Task tersentuh |
 |---|---|---|---|
+| [2026-08-06](2026-08-06.md) | Kamis | Prototype dirapikan, aplikasi BSP lahir, autentikasi pindah ke SAP standar, 5 halaman | Jalur B B1&ndash;B11 |
 | [2026-07-29](2026-07-29.md) | Rabu | 10 tabel, 6 index, lock object, 5 objek number range | Task 3 Step 5 (sebagian) |
 | [2026-07-28](2026-07-28.md) | Selasa | Inisialisasi repo, file DDIC, domain dan data element | Task 1, Task 2, Task 3 Step 1&ndash;4 |
 

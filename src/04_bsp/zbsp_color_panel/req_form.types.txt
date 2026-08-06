@@ -1,0 +1,56 @@
+Type Definitions untuk req_form.htm
+===================================
+
+DIPASTE ke tab "Type Definitions" di SE80.
+
+--- SALIN MULAI BARIS BERIKUT ---
+
+TYPES: BEGIN OF ty_soitem,
+         posnr    TYPE vbap-posnr,
+         matnr    TYPE vbap-matnr,
+         maktx    TYPE makt-maktx,
+         kwmeng   TYPE vbap-kwmeng,
+         vrkme    TYPE vbap-vrkme,
+         eligible TYPE c LENGTH 1,
+         reason   TYPE string,
+       END OF ty_soitem.
+
+TYPES: BEGIN OF ty_matkey,
+         matnr TYPE vbap-matnr,
+       END OF ty_matkey.
+
+TYPES: BEGIN OF ty_makt,
+         matnr TYPE makt-matnr,
+         maktx TYPE makt-maktx,
+       END OF ty_makt.
+
+TYPES: BEGIN OF ty_ccode,
+         matnr      TYPE zcp_color_code-matnr,
+         color_code TYPE zcp_de_color_code,
+       END OF ty_ccode.
+
+TYPES: tt_soitem TYPE STANDARD TABLE OF ty_soitem WITH DEFAULT KEY,
+       tt_matkey TYPE STANDARD TABLE OF ty_matkey WITH DEFAULT KEY,
+       tt_makt   TYPE STANDARD TABLE OF ty_makt   WITH DEFAULT KEY,
+       tt_ccode  TYPE STANDARD TABLE OF ty_ccode  WITH DEFAULT KEY.
+
+--- SALIN SAMPAI BARIS DI ATAS ---
+
+
+Keterangan
+----------
+
+eligible  'X' bila material itu masih boleh dibuatkan Color Panel.
+reason    Sebab bila TIDAK boleh. Dua kemungkinan:
+            "Sudah punya Color Code KW00001"
+            "Sudah pernah di-import dari SO ini"
+
+Keduanya dibedakan dengan sengaja. Yang pertama berarti materialnya
+memang sudah punya panel dan seharusnya lewat halaman Renewal; yang
+kedua berarti SO ini pernah diproses sebelumnya. Tindak lanjutnya
+berbeda, jadi pesannya tidak boleh disamakan.
+
+ty_matkey ada semata sebagai pendorong FOR ALL ENTRIES ke MAKT dan
+ZCP_COLOR_CODE. Sama seperti ty_uname di admin_user: gt_items tidak
+bisa dipakai langsung karena FOR ALL ENTRIES menuntut tipe dan panjang
+field pendorong persis sama dengan field di WHERE.

@@ -1,0 +1,63 @@
+Page Attributes untuk req_form.htm
+==================================
+
+PERINGATAN: daftar ini berbeda dari halaman lain. Jangan disalin dari
+halaman sebelah.
+
+Prasyarat: tab "Type Definitions" diisi lebih dulu dari
+req_form.types.txt, kalau tidak TT_SOITEM tidak dikenal.
+
+Name          Type Ref    Associated Type      Auto
+--------------------------------------------------------
+gv_user_id    TYPE        ZCP_DE_USER_ID       (kosong)
+gv_user_name  TYPE        STRING               (kosong)
+gv_role       TYPE        STRING               (kosong)
+gv_buyer_id   TYPE        ZCP_DE_BUYER_ID      (kosong)
+gv_as_sales   TYPE        CHAR1                (kosong)
+gv_as_admin   TYPE        CHAR1                (kosong)
+gv_as_qc      TYPE        CHAR1                (kosong)
+gv_as_it      TYPE        CHAR1                (kosong)
+gv_error      TYPE        STRING               (kosong)
+gv_info       TYPE        STRING               (kosong)
+gv_so_number  TYPE        VBELN                (kosong)
+gv_so_kunnr   TYPE        ZCP_DE_BUYER_ID      (kosong)
+gv_so_name    TYPE        ZCP_BUYER-BUYER_NAME (kosong)
+gv_remarks    TYPE        ZCP_DE_REMARKS       (kosong)
+gv_found      TYPE        CHAR1                (kosong)
+gv_cnt_ok     TYPE        I                    (kosong)
+gt_items      TYPE        TT_SOITEM            (kosong)
+
+
+Keterangan
+----------
+
+gv_so_number  Nomor SO yang sedang dilihat, sudah dinormalkan ke
+              format VBELN 10 digit berimbuhan nol di depan.
+
+gv_so_kunnr   Nomor pelanggan dari VBAK-KUNNR. Sejak 6 Agustus 2026
+              BUYER_ID = KUNNR, jadi field ini langsung dipakai
+              sebagai buyer request tanpa tabel perantara.
+
+gv_so_name    Nama buyer dari ZCP_BUYER. Kosong berarti pelanggan SO
+              ini belum terdaftar sebagai buyer Color Panel -- dan
+              itu menghalangi pembuatan request.
+
+gv_found      'X' bila pencarian SO berhasil. Dipakai layout untuk
+              memutuskan apakah tabel material dan tombol Submit
+              ditampilkan.
+
+gv_cnt_ok     Jumlah material yang layak. Nol berarti tombol Submit
+              tidak ada gunanya dan disembunyikan.
+
+
+Kenapa halaman ini stateful penting
+-----------------------------------
+
+gt_items diisi saat menekan "Cari SO", lalu masih harus ada saat
+menekan "Submit". Itu hanya bekerja karena halaman stateful -- Page
+Attributes bertahan antar permintaan.
+
+Meski begitu, OnInputProcessing TIDAK mempercayai isi gt_items saat
+submit. Seluruh SO dibaca ulang dan kelayakannya dihitung ulang dari
+database. Jeda antara Cari dan Submit bisa berjam-jam, dan dalam jeda
+itu Admin lain bisa saja sudah meng-approve material yang sama.

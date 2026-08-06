@@ -48,6 +48,36 @@ ke dalam grid di tab Page Attributes. Format .txt supaya jelas bahwa
 file itu bahan bacaan, bukan bahan salin.
 
 
+PEMETAAN FILE KE TAB, PER HALAMAN
+---------------------------------
+
+  Halaman         Type Definitions      Page Attributes           Event Handler
+  ------------------------------------------------------------------------------
+  noaccess.htm    (tidak ada)           noaccess.attributes.txt   OnRequest
+  main.htm        (tidak ada)           main.attributes.txt       OnRequest
+  admin_user.htm  admin_user.types.txt  admin_user.attributes.txt OnInitialization
+                                                                  + OnInputProcessing
+  req_list.htm    req_list.types.txt    req_list.attributes.txt   OnInitialization
+  req_form.htm    req_form.types.txt    req_form.attributes.txt   OnInitialization
+                                                                  + OnInputProcessing
+
+Tipe lokal TIDAK dipakai bersama antar halaman. Tiap halaman BSP adalah
+kelas tersendiri, jadi tt_buyer di req_list.htm dan tt_buyer di
+admin_user.htm adalah dua tipe berbeda yang kebetulan senama. Menyalin
+file tipe milik halaman lain akan menghasilkan error "Type TT_xxx is
+unknown" pada atribut yang tipenya tidak ikut tersalin.
+
+Tipe yang didefinisikan tiap file:
+
+  req_list.types.txt    ty_reqrow  ty_itmstat  ty_buyer
+  req_form.types.txt    ty_soitem  ty_matkey   ty_makt   ty_ccode
+  admin_user.types.txt  ty_assign  ty_uname    ty_name   ty_usermap  ty_buyer
+
+Yang dipaste HANYA blok di antara penanda SALIN MULAI dan SALIN SAMPAI.
+Baris penjelasan di luar penanda itu bukan ABAP dan akan menimbulkan
+error tersendiri.
+
+
 DAFTAR ATRIBUT TIAP HALAMAN BERBEDA -- JANGAN DISAMAKAN
 -------------------------------------------------------
 

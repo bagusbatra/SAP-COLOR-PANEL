@@ -1,0 +1,41 @@
+Page Attributes untuk req_list.htm
+==================================
+
+PERINGATAN: daftar ini berbeda dari halaman lain. Jangan disalin dari
+halaman sebelah. Lihat catatan di README.txt.
+
+Prasyarat: tab "Type Definitions" diisi lebih dulu dari
+req_list.types.txt, kalau tidak TT_REQROW tidak dikenal.
+
+Name          Type Ref    Associated Type      Auto
+--------------------------------------------------------
+gv_user_id    TYPE        ZCP_DE_USER_ID       (kosong)
+gv_user_name  TYPE        STRING               (kosong)
+gv_role       TYPE        STRING               (kosong)
+gv_buyer_id   TYPE        ZCP_DE_BUYER_ID      (kosong)
+gv_as_sales   TYPE        CHAR1                (kosong)
+gv_as_admin   TYPE        CHAR1                (kosong)
+gv_as_qc      TYPE        CHAR1                (kosong)
+gv_as_it      TYPE        CHAR1                (kosong)
+gv_filter     TYPE        STRING               X
+gv_scope      TYPE        STRING               (kosong)
+gt_req        TYPE        TT_REQROW            (kosong)
+
+
+Keterangan
+----------
+
+gv_filter  Saringan status: kosong (semua), 'P', atau 'C'.
+           Kolom Auto DICENTANG supaya nilainya bisa datang dari
+           parameter URL, misalnya req_list.htm?gv_filter=P. Itu
+           membuat pintasan dari dashboard bisa langsung menyaring
+           tanpa perlu menulis event handler tambahan.
+
+gv_scope   Kalimat penjelas cakupan data yang sedang ditampilkan,
+           misalnya "Seluruh buyer" atau "Buyer 0000012345 saja".
+           Ditampilkan di bawah judul supaya Sales dan Admin sama-sama
+           tahu mereka sedang melihat potongan data yang mana --
+           tanpa ini, daftar kosong terlihat sama dengan daftar yang
+           tersaring habis.
+
+gt_req     Daftar request beserta hitungan itemnya.

@@ -3,10 +3,14 @@
 Rekaman kemajuan per task dan per step. Diperbarui tiap kali ada step yang selesai.
 
 - **Proyek:** Color Panel Management System — SAP S/4HANA 1809, PT. Kayu Mebel Indonesia
-- **Plan sumber:** `docs/superpowers/plans/2026-07-28-color-panel-foundation-dcp.md`
-- **Spec sumber:** `docs/superpowers/specs/2026-07-28-color-panel-foundation-dcp-design.md`
+- **Plan sumber:**
+  - Jalur DDIC &amp; Class: `docs/superpowers/plans/2026-07-28-color-panel-foundation-dcp.md`
+  - Jalur BSP Pages: `docs/superpowers/plans/2026-08-06-bsp-foundation-dcp-pages.md`
+- **Spec sumber:**
+  - `docs/superpowers/specs/2026-07-28-color-panel-foundation-dcp-design.md` &mdash; **dengan revisi 6 Agustus di bagian akhir**
+  - `docs/superpowers/specs/2026-08-06-role-capability-map.md` &mdash; peta kewenangan per role
 - **Log harian:** `report/log_activity/` &mdash; satu file per tanggal, indeks di `report/log_activity/README.md`
-- **Terakhir diperbarui:** 29 Juli 2026
+- **Terakhir diperbarui:** 6 Agustus 2026
 
 ## Arti simbol status
 
@@ -15,6 +19,22 @@ Rekaman kemajuan per task dan per step. Diperbarui tiap kali ada step yang seles
 | ✅ | Selesai dan terverifikasi |
 | 🟡 | Sedang dikerjakan / selesai sebagian |
 | ⬜ | Belum mulai |
+| ⤷ | Digantikan task lain, lihat keterangannya |
+
+---
+
+## Dua Jalur Pengerjaan
+
+Sejak 6 Agustus 2026 pekerjaan berjalan di dua jalur paralel, bukan satu urutan lurus seperti rencana semula.
+
+| Jalur | Isi | Plan |
+|---|---|---|
+| **A. DDIC &amp; Class** | Tabel, number range, message class, delapan ABAP class | Plan 28 Juli, Task 1&ndash;11 |
+| **B. BSP Pages** | Delapan halaman `Page with Flow Logic` | Plan 6 Agustus |
+
+Alasan dipecah: jalur B dibangun lebih dulu sebagai halaman yang membaca database langsung, supaya alur bisnis bisa diuji dari awal sampai akhir tanpa menunggu seluruh lapisan class selesai. Logic dipindahkan ke class pada Tahap 3 plan 6 Agustus.
+
+Konsekuensinya beberapa halaman memuat OpenSQL yang kelak pindah ke class. Itu keputusan sadar, dan tiap tempatnya diberi komentar penunjuk.
 
 ---
 
@@ -33,13 +53,15 @@ Rekaman kemajuan per task dan per step. Diperbarui tiap kali ada step yang seles
 | 9 | ZCL_CP_DCP — Operasi Database | ⬜ | — |
 | 10 | ZCL_CP_PHOTO | ⬜ | — |
 | 11 | ZCL_CP_REQUEST | ⬜ | — |
-| 12 | Aplikasi BSP, Halaman Login, dan Router | ⬜ | — |
-| 13 | Halaman Daftar Request dan Form Request Sales | ⬜ | — |
-| 14 | Halaman Approval Admin (Partial Approve) | ⬜ | — |
-| 15 | Halaman Daftar DCP | ⬜ | — |
-| 16 | Halaman Detail DCP — Siklus Panel | ⬜ | — |
+| 12 | Aplikasi BSP, Halaman Login, dan Router | ⤷ | digantikan Jalur B |
+| 13 | Halaman Daftar Request dan Form Request Sales | ⤷ | digantikan Jalur B |
+| 14 | Halaman Approval Admin (Partial Approve) | ⤷ | digantikan Jalur B |
+| 15 | Halaman Daftar DCP | ⤷ | digantikan Jalur B |
+| 16 | Halaman Detail DCP — Siklus Panel | ⤷ | digantikan Jalur B |
 
-**Progres keseluruhan:** 2 dari 16 task tuntas, 1 task berjalan.
+**Progres Jalur A:** 2 dari 11 task tuntas, 1 berjalan. Task 12&ndash;16 digantikan Jalur B.
+
+**Progres Jalur B:** fondasi tuntas, 3 dari 8 halaman aktif dan teruji, 2 halaman aktif menunggu data uji.
 
 ---
 
@@ -232,7 +254,10 @@ Number length domain memakai bawaan SAP, bukan bikin sendiri:
 | 5 | Uji alur create dan approve lewat report sementara | ⬜ | |
 | 6 | Commit | ⬜ | |
 
-## Task 12 — Aplikasi BSP, Halaman Login, dan Router ⬜
+## Task 12 — Aplikasi BSP, Halaman Login, dan Router ⤷
+
+> **Digantikan.** Halaman ini dibangun lewat Jalur B dengan rancangan berbeda: autentikasi SAP standar, tanpa `login.htm`, dan halaman membaca database langsung sebelum logic dipindah ke class. Lihat bagian *Jalur B* di bawah dan plan 6 Agustus.
+
 
 | | Step | Status | Keterangan |
 |:---:|---|:---:|---|
@@ -244,7 +269,10 @@ Number length domain memakai bawaan SAP, bukan bikin sendiri:
 | 6 | Periksa audit trail login | ⬜ | |
 | 7 | Commit | ⬜ | |
 
-## Task 13 — Halaman Daftar Request dan Form Request Sales ⬜
+## Task 13 — Halaman Daftar Request dan Form Request Sales ⤷
+
+> **Digantikan.** Halaman ini dibangun lewat Jalur B dengan rancangan berbeda: autentikasi SAP standar, tanpa `login.htm`, dan halaman membaca database langsung sebelum logic dipindah ke class. Lihat bagian *Jalur B* di bawah dan plan 6 Agustus.
+
 
 | | Step | Status | Keterangan |
 |:---:|---|:---:|---|
@@ -254,7 +282,10 @@ Number length domain memakai bawaan SAP, bukan bikin sendiri:
 | 4 | Uji sebagai Sales | ⬜ | |
 | 5 | Commit | ⬜ | |
 
-## Task 14 — Halaman Approval Admin (Partial Approve) ⬜
+## Task 14 — Halaman Approval Admin (Partial Approve) ⤷
+
+> **Digantikan.** Halaman ini dibangun lewat Jalur B dengan rancangan berbeda: autentikasi SAP standar, tanpa `login.htm`, dan halaman membaca database langsung sebelum logic dipindah ke class. Lihat bagian *Jalur B* di bawah dan plan 6 Agustus.
+
 
 | | Step | Status | Keterangan |
 |:---:|---|:---:|---|
@@ -264,7 +295,10 @@ Number length domain memakai bawaan SAP, bukan bikin sendiri:
 | 4 | Buat halaman di SE80 dan uji partial approve | ⬜ | Sebagian approved, sebagian rejected |
 | 5 | Commit | ⬜ | |
 
-## Task 15 — Halaman Daftar DCP ⬜
+## Task 15 — Halaman Daftar DCP ⤷
+
+> **Digantikan.** Halaman ini dibangun lewat Jalur B dengan rancangan berbeda: autentikasi SAP standar, tanpa `login.htm`, dan halaman membaca database langsung sebelum logic dipindah ke class. Lihat bagian *Jalur B* di bawah dan plan 6 Agustus.
+
 
 | | Step | Status | Keterangan |
 |:---:|---|:---:|---|
@@ -274,7 +308,10 @@ Number length domain memakai bawaan SAP, bukan bikin sendiri:
 | 4 | Buat structure, table type, dan halaman, lalu uji | ⬜ | |
 | 5 | Commit | ⬜ | |
 
-## Task 16 — Halaman Detail DCP, Siklus Panel ⬜
+## Task 16 — Halaman Detail DCP, Siklus Panel ⤷
+
+> **Digantikan.** Halaman ini dibangun lewat Jalur B dengan rancangan berbeda: autentikasi SAP standar, tanpa `login.htm`, dan halaman membaca database langsung sebelum logic dipindah ke class. Lihat bagian *Jalur B* di bawah dan plan 6 Agustus.
+
 
 | | Step | Status | Keterangan |
 |:---:|---|:---:|---|
@@ -286,18 +323,116 @@ Number length domain memakai bawaan SAP, bukan bikin sendiri:
 
 ---
 
+## Jalur B &mdash; BSP Pages (mulai 6 Agustus 2026)
+
+Plan: `docs/superpowers/plans/2026-08-06-bsp-foundation-dcp-pages.md`
+Sumber halaman: `src/04_bsp/zbsp_color_panel/` &mdash; struktur DATAR, satu file per tab SE80. Baca `README.txt` di folder itu lebih dulu.
+
+### Fondasi
+
+| | Objek | Status | Tanggal |
+|:---:|---|:---:|---|
+| B1 | Aplikasi BSP `ZBSP_COLOR_PANEL` di SE80 | ✅ | 6 Agu 2026 |
+| B2 | Service SICF aktif, autentikasi SAP standar | ✅ | 6 Agu 2026 |
+| B3 | Role PFCG `ZCP_IT` dibuat + User Comparison | ✅ | 6 Agu 2026 |
+| B4 | Role PFCG `ZCP_SALES`, `ZCP_ADMIN`, `ZCP_QC` | ⬜ | &mdash; |
+| B5 | `ZCP_USER` direvisi: `PASSWORD_HASH` dan `ROLE` dibuang | ✅ | 6 Agu 2026 |
+| B6 | Potongan bersama `_shared/` (head, nav, role_detect) | ✅ | 6 Agu 2026 |
+
+### Halaman
+
+| | Halaman | Peran | Status | Tanggal |
+|:---:|---|---|:---:|---|
+| B7 | `noaccess.htm` | Penolakan, membedakan tiga sebab | ✅ | 6 Agu 2026 |
+| B8 | `main.htm` | Dashboard + router role | ✅ | 6 Agu 2026 |
+| B9 | `admin_user.htm` | Pemetaan SAP user ke buyer (IT) | ✅ | 6 Agu 2026 |
+| B10 | `req_list.htm` | Daftar request | 🟡 | aktif, belum diuji dengan data |
+| B11 | `req_form.htm` | Input SO, pilih material, submit | 🟡 | aktif, tersendat prasyarat data |
+| B12 | `req_detail.htm` | Approval Admin per item | ⬜ | &mdash; |
+| B13 | `dcp_list.htm` | Daftar DCP | ⬜ | &mdash; |
+| B14 | `dcp_detail.htm` | Grid panel DCP | ⬜ | &mdash; |
+
+### Report bantu
+
+| | Report | Guna | Status |
+|:---:|---|---|:---:|
+| B15 | `ZCP_FIX_USER` | Pemulihan saat user mengunci dirinya sendiri | ✅ dipakai |
+| B16 | `ZCP_ADD_BUYER` | Daftarkan pelanggan SAP jadi buyer, selama TMG belum ada | 🟡 ditulis, belum dibuat di SE38 |
+
+---
+
+## Keputusan yang Membatalkan Rancangan Sebelumnya
+
+Tiga keputusan pada 6 Agustus 2026 mengubah rancangan di spec 28 Juli. Dicatat di sini supaya tidak perlu ditelusuri ulang dari riwayat percakapan.
+
+### 1. Autentikasi pindah ke SAP standar
+
+Membatalkan keputusan desain nomor 2. Tidak ada `login.htm`, tidak ada password yang dikelola aplikasi, SICF tab Logon Data dikosongkan. Role dibaca dari PFCG lewat `AGR_USERS`.
+
+**Aturan wajib nomor 5 gugur** &mdash; `SY-UNAME` sekarang justru satu-satunya identitas yang sah.
+
+Harga yang dibayar: setiap pemakai wajib punya SAP dialog user, dengan biaya lisensi per orang. Rinciannya di `src/01_ddic/pfcg_roles.txt`.
+
+### 2. `BUYER_ID` = `KUNNR`
+
+Nomor pelanggan SAP dipakai apa adanya sebagai `BUYER_ID`. Panjangnya sudah cocok CHAR10, dan `VBAK-KUNNR` langsung menyambung ke `ZCP_BUYER` tanpa tabel perantara. Tidak ada perubahan DDIC.
+
+Konsekuensinya tiap pelanggan harus didaftarkan sekali di `ZCP_BUYER` sebelum SO-nya bisa di-request. Itu gerbang yang disengaja, bukan kelalaian &mdash; tidak semua pelanggan memesan color panel.
+
+### 3. IT memegang akses penuh &mdash; SEMENTARA
+
+Pemegang `ZCP_IT` boleh menjalankan seluruh alur bisnis dari awal sampai akhir. Berlaku selama pembangunan, **wajib dicabut sebelum go-live**.
+
+Kewenangan dipisahkan dari identitas: `gv_role` menjawab "dia siapa", empat flag `gv_as_sales` / `gv_as_admin` / `gv_as_qc` / `gv_as_it` menjawab "dia boleh apa". Seluruh halaman memeriksa flag, bukan `gv_role`.
+
+Pencabutannya cukup menghapus satu blok bertanda `SEMENTARA: IT memegang akses penuh` di `_shared/role_detect.abap` lalu disebarkan. Rinciannya di `docs/superpowers/specs/2026-08-06-role-capability-map.md` bagian 8.
+
+**Selama ini berlaku, menguji sebagai IT tidak membuktikan pembatasan role bekerja.**
+
+---
+
+## Enam Pertanyaan yang Menunggu Keputusan Yogi
+
+Ditemukan saat memetakan kewenangan. Rincian dan pilihannya di `docs/superpowers/specs/2026-08-06-role-capability-map.md` bagian 5.
+
+| # | Pertanyaan | Menghambat |
+|:---:|---|---|
+| 1 | **QC boleh approve panel atau tidak?** Di prototype QC tidak bisa menekan apa pun, bertentangan dengan aturan bisnis | `dcp_detail.htm`, `mcp_detail.htm` |
+| 2 | Master User: ADMIN ikut, atau IT saja? | `admin_user.htm`, murah diubah sekarang |
+| 3 | Sales perlu halaman pemantauan hasil requestnya? | Halaman baru di luar delapan |
+| 4 | Color Code: QC lihat saja atau boleh ubah? | &mdash; |
+| 5 | Reject DCP header cukup wewenang ADMIN sendirian? | &mdash; |
+| 6 | Prioritas role membuat ADMIN+QC selalu jadi ADMIN. Masalah? | &mdash; |
+
+---
+
 ## Titik Lanjut Berikutnya
 
-**Task 3 Step 5d-3** — mengisi interval `01` untuk kelima objek number range di SNRO. Jalurnya: `SNRO -> Object -> Number ranges -> Change Intervals -> Insert Interval -> Save`.
+Tiga hal yang menghambat pengujian `req_form.htm` sampai tuntas, urut dari yang paling menghambat.
+
+### 1. Interval number range di SNRO &mdash; MENGHAMBAT SUBMIT
+
+Tanpa ini `REQ-2026-0001` tidak bisa dibangkitkan dan tombol Submit selalu gagal.
+
+`SNRO -> Object -> Number ranges -> Change Intervals -> Insert Interval -> Save`
 
 | Object | No | From number | To number | Year |
 |---|:---:|---|---|:---:|
-| `ZCP_COLOR` | `01` | `00001` | `99999` | — |
+| `ZCP_COLOR` | `01` | `00001` | `99999` | &mdash; |
 | `ZCP_REQ` | `01` | `0001` | `9999` | `2026` |
 | `ZCP_DCP` | `01` | `0001` | `9999` | `2026` |
-| `ZCP_PHOTO` | `01` | `000000001` | `999999999` | — |
-| `ZCP_AUDIT` | `01` | `000000000001` | `999999999999` | — |
+| `ZCP_PHOTO` | `01` | `000000001` | `999999999` | &mdash; |
+| `ZCP_AUDIT` | `01` | `000000000001` | `999999999999` | &mdash; |
 
 Kolom `Ext` jangan dicentang. Interval belum jadi sampai tombol Save ditekan &mdash; baris yang muncul di grid saja belum tersimpan.
 
-Setelah itu berturut-turut: SE91 message class `ZCP`, TMG `ZCP_BUYER`, lalu commit penutup Task 3.
+### 2. Isi `ZCP_BUYER` &mdash; MENGHAMBAT PENCARIAN SO
+
+Pelanggan pada SO uji (`1000000008`) belum terdaftar. Buat report `ZCP_ADD_BUYER` di SE38 dari `src/03_reports/zcp_add_buyer.abap`, jalankan dengan KUNNR tersebut.
+
+### 3. Sisa Task 3 yang tertunda sejak Juli
+
+- SE91 message class `ZCP`
+- TMG `ZCP_BUYER` &mdash; setelah ini `ZCP_ADD_BUYER` boleh dihapus
+
+Setelah ketiganya beres: uji `req_form.htm` sampai `REQ-2026-0001` terbentuk, lalu lanjut ke `req_detail.htm`.
