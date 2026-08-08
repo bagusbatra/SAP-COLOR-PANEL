@@ -1,0 +1,277 @@
+<%@page language="abap"%>
+<html>
+<head>
+<title>Approval Request &mdash; Color Panel</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<script>
+tailwind.config = { theme: { extend: { colors: {
+  navy: '#1E3A8A', navydark: '#1E293B', navylight: '#3B4E9E' } } } }
+</script>
+</head>
+<body class="bg-slate-100">
+<div class="flex">
+
+<aside class="w-64 bg-navydark text-white flex flex-col min-h-screen">
+  <div class="px-5 py-5 border-b border-white border-opacity-10">
+    <div class="text-lg font-bold">Color Panel</div>
+    <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
+  </div>
+  <nav class="flex-1 py-3">
+
+    <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-gauge w-4"></i> Dashboard
+    </a>
+
+    <% IF gv_as_sales = 'X' OR gv_as_admin = 'X'. %>
+    <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white">
+      <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
+    </a>
+    <% ENDIF. %>
+
+    <% IF gv_as_admin = 'X' OR gv_as_qc = 'X'. %>
+    <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-flask w-4"></i> DCP
+    </a>
+    <% ENDIF. %>
+
+    <% IF gv_as_it = 'X'. %>
+    <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-users w-4"></i> User
+    </a>
+    <% ENDIF. %>
+
+  </nav>
+  <div class="px-5 py-4 border-t border-white border-opacity-10">
+    <div class="text-sm font-semibold text-white"><%= gv_user_name %></div>
+    <div class="text-xs text-gray-400"><%= gv_user_id %> &middot; <%= gv_role %></div>
+  </div>
+</aside>
+
+<main class="flex-1">
+
+  <div class="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">
+        <%= gv_request_id %>
+      </h1>
+      <p class="text-sm text-slate-500">
+        SO <span class="font-mono"><%= gv_so_number %></span> &middot;
+        <%= gv_buyer_name %>
+        <span class="font-mono text-xs">(<%= gv_req_buyer %>)</span>
+      </p>
+    </div>
+    <a href="req_list.htm" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium">
+      <i class="fa-solid fa-arrow-left"></i> Kembali
+    </a>
+  </div>
+
+  <div class="p-8">
+
+    <% IF gv_error IS NOT INITIAL. %>
+    <div class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+      <i class="fa-solid fa-circle-exclamation"></i> <%= gv_error %>
+    </div>
+    <% ENDIF. %>
+
+    <% IF gv_info IS NOT INITIAL. %>
+    <div class="mb-4 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
+      <i class="fa-solid fa-circle-info"></i> <%= gv_info %>
+    </div>
+    <% ENDIF. %>
+
+    <%-- Hasil per item. Ditampilkan hanya setelah ada aksi. --%>
+    <% IF gt_result IS NOT INITIAL. %>
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+      <div class="px-5 py-4 border-b border-slate-200">
+        <h2 class="font-bold text-slate-800">Hasil per Material</h2>
+        <p class="text-xs text-slate-500">
+          Tiap material diputuskan sendiri-sendiri, jadi sebagian bisa berhasil
+          sementara sebagian lain gagal.
+        </p>
+      </div>
+      <table class="w-full text-sm">
+        <tbody class="divide-y divide-slate-100">
+          <% DATA: ls_rs TYPE ty_result. %>
+          <% LOOP AT gt_result INTO ls_rs. %>
+          <tr>
+            <td class="px-5 py-3 w-10">
+              <% IF ls_rs-success = 'X'. %>
+                <i class="fa-solid fa-circle-check text-emerald-600"></i>
+              <% ELSE. %>
+                <i class="fa-solid fa-circle-xmark text-red-600"></i>
+              <% ENDIF. %>
+            </td>
+            <td class="px-5 py-3 font-mono w-24"><%= ls_rs-so_item %></td>
+            <td class="px-5 py-3 font-mono w-40"><%= ls_rs-matnr %></td>
+            <td class="px-5 py-3"><%= ls_rs-message %></td>
+          </tr>
+          <% ENDLOOP. %>
+        </tbody>
+      </table>
+    </div>
+    <% ENDIF. %>
+
+    <%-- Informasi request --%>
+    <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
+      <div class="grid grid-cols-4 gap-5 text-sm">
+        <div>
+          <div class="text-xs text-slate-500">Tanggal Request</div>
+          <div><%= gv_req_date %></div>
+        </div>
+        <div>
+          <div class="text-xs text-slate-500">Diajukan oleh</div>
+          <div class="font-mono"><%= gv_sales_user %></div>
+        </div>
+        <div>
+          <div class="text-xs text-slate-500">Status</div>
+          <div>
+            <% IF gv_req_status = 'P'. %>
+              <span class="px-2 py-1 rounded text-xs bg-amber-100 text-amber-800">Pending</span>
+            <% ELSE. %>
+              <span class="px-2 py-1 rounded text-xs bg-slate-100 text-slate-700">Closed</span>
+            <% ENDIF. %>
+          </div>
+        </div>
+        <div>
+          <div class="text-xs text-slate-500">Menunggu keputusan</div>
+          <div><%= gv_cnt_pending %> material</div>
+        </div>
+      </div>
+      <% IF gv_req_remarks IS NOT INITIAL. %>
+      <div class="mt-4 pt-4 border-t border-slate-200">
+        <div class="text-xs text-slate-500">Remarks dari Sales</div>
+        <div class="text-sm"><%= gv_req_remarks %></div>
+      </div>
+      <% ENDIF. %>
+    </div>
+
+    <form method="post">
+      <input type="hidden" name="request_id" value="<%= gv_request_id %>"/>
+
+      <% IF gv_as_admin = 'X' AND gv_cnt_pending > 0. %>
+      <div class="mb-4 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
+        <i class="fa-solid fa-circle-info"></i>
+        Centang material yang hendak diputuskan, lalu tekan Approve atau Reject.
+        Yang tidak dicentang tidak berubah statusnya.
+      </div>
+      <% ENDIF. %>
+
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-5">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-slate-600">
+            <tr>
+              <% IF gv_as_admin = 'X' AND gv_cnt_pending > 0. %>
+              <th class="px-5 py-3 w-10"></th>
+              <% ENDIF. %>
+              <th class="text-left px-5 py-3 font-semibold">Item</th>
+              <th class="text-left px-5 py-3 font-semibold">Material</th>
+              <th class="text-right px-5 py-3 font-semibold">Qty</th>
+              <th class="text-left px-5 py-3 font-semibold">Status</th>
+              <th class="text-left px-5 py-3 font-semibold">Hasil / Alasan</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <% DATA: ls_i TYPE ty_itmrow. %>
+            <% LOOP AT gt_items INTO ls_i. %>
+            <tr <% IF ls_i-status <> 'P'. %>class="bg-slate-50"<% ENDIF. %>>
+
+              <% IF gv_as_admin = 'X' AND gv_cnt_pending > 0. %>
+              <td class="px-5 py-3 text-center">
+                <% IF ls_i-status = 'P' AND ls_i-blocked IS INITIAL. %>
+                <input type="checkbox" name="sel_<%= ls_i-so_item %>" value="X" class="w-4 h-4"/>
+                <% ENDIF. %>
+              </td>
+              <% ENDIF. %>
+
+              <td class="px-5 py-3 font-mono"><%= ls_i-so_item %></td>
+              <td class="px-5 py-3">
+                <div class="font-mono text-xs"><%= ls_i-matnr %></div>
+                <div class="text-slate-600"><%= ls_i-maktx %></div>
+              </td>
+              <td class="px-5 py-3 text-right font-mono">
+                <%= ls_i-menge %> <%= ls_i-meins %>
+              </td>
+              <td class="px-5 py-3">
+                <% IF ls_i-status = 'P'. %>
+                  <% IF ls_i-blocked = 'X'. %>
+                    <span class="px-2 py-1 rounded text-xs bg-red-100 text-red-800">Terhalang</span>
+                  <% ELSE. %>
+                    <span class="px-2 py-1 rounded text-xs bg-amber-100 text-amber-800">Pending</span>
+                  <% ENDIF. %>
+                <% ELSEIF ls_i-status = 'A'. %>
+                  <span class="px-2 py-1 rounded text-xs bg-emerald-100 text-emerald-800">Approved</span>
+                <% ELSE. %>
+                  <span class="px-2 py-1 rounded text-xs bg-red-100 text-red-800">Rejected</span>
+                <% ENDIF. %>
+              </td>
+              <td class="px-5 py-3">
+
+                <% IF ls_i-status = 'A'. %>
+                  <div class="font-mono text-xs">
+                    <%= ls_i-color_code %>
+                  </div>
+                  <a href="dcp_detail.htm?gv_dcp_id=<%= ls_i-dcp_id %>"
+                     class="text-navy hover:underline font-mono text-xs"><%= ls_i-dcp_id %></a>
+
+                <% ELSEIF ls_i-status = 'R'. %>
+                  <div class="text-xs text-red-700"><%= ls_i-reject_reason %></div>
+
+                <% ELSEIF ls_i-blocked = 'X'. %>
+                  <div class="text-xs text-red-700"><%= ls_i-block_reason %></div>
+
+                <% ELSEIF gv_as_admin = 'X'. %>
+                  <input type="text" name="reason_<%= ls_i-so_item %>"
+                         placeholder="alasan bila ditolak"
+                         class="w-full px-2 py-1 border border-slate-300 rounded text-xs"/>
+
+                <% ELSE. %>
+                  <span class="text-slate-400">&mdash;</span>
+                <% ENDIF. %>
+
+              </td>
+            </tr>
+            <% ENDLOOP. %>
+          </tbody>
+        </table>
+      </div>
+
+      <% IF gv_as_admin = 'X' AND gv_cnt_pending > 0. %>
+      <div class="flex gap-3 items-center">
+        <button type="submit" name="onInputProcessing" value="approve"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg text-sm font-medium">
+          <i class="fa-solid fa-check"></i> Approve Terpilih
+        </button>
+        <button type="submit" name="onInputProcessing" value="reject"
+                class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg text-sm font-medium">
+          <i class="fa-solid fa-xmark"></i> Reject Terpilih
+        </button>
+        <span class="text-xs text-slate-500">
+          Reject wajib disertai alasan pada baris yang bersangkutan.
+        </span>
+      </div>
+      <% ENDIF. %>
+
+    </form>
+
+    <div class="mt-6 px-4 py-3 rounded-lg bg-slate-50 border-l-4 border-navy text-xs text-slate-600">
+      <strong>Satu material di-approve menghasilkan empat hal sekaligus:</strong>
+      Color Code <span class="font-mono">KW#####</span> yang dipetakan 1:1 ke material,
+      satu DCP header <span class="font-mono">DCP-YYYY-NNNN</span>,
+      panel sebanyak qty item SO dengan status <span class="font-mono">NA</span> (polos, belum dicat),
+      dan satu baris penjaga agar SO item yang sama tidak bisa diproses dua kali.
+      <br/><br/>
+      Baris berlabel <strong>Terhalang</strong> tidak bisa dicentang: materialnya sudah punya
+      Color Code, atau SO item-nya sudah pernah di-import lewat request lain. Keduanya bisa
+      terjadi setelah request ini dibuat.
+    </div>
+
+  </div>
+</main>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+Page Attributes untuk req_detail.htm
+====================================
+
+PERINGATAN: daftar ini berbeda dari halaman lain. Jangan disalin dari
+halaman sebelah.
+
+Prasyarat: tab "Type Definitions" diisi lebih dulu dari
+req_detail.types.txt, kalau tidak TT_ITMROW tidak dikenal.
+
+Name           Type Ref    Associated Type      Auto
+---------------------------------------------------------
+gv_user_id     TYPE        ZCP_DE_USER_ID       (kosong)
+gv_user_name   TYPE        STRING               (kosong)
+gv_role        TYPE        STRING               (kosong)
+gv_buyer_id    TYPE        ZCP_DE_BUYER_ID      (kosong)
+gv_as_sales    TYPE        CHAR1                (kosong)
+gv_as_admin    TYPE        CHAR1                (kosong)
+gv_as_qc       TYPE        CHAR1                (kosong)
+gv_as_it       TYPE        CHAR1                (kosong)
+gv_request_id  TYPE        ZCP_DE_REQUEST_ID    X
+gv_so_number   TYPE        VBELN                (kosong)
+gv_req_buyer   TYPE        ZCP_DE_BUYER_ID      (kosong)
+gv_buyer_name  TYPE        KNA1-NAME1           (kosong)
+gv_req_date    TYPE        DATUM                (kosong)
+gv_req_status  TYPE        ZCP_DE_REQ_ST        (kosong)
+gv_sales_user  TYPE        ZCP_DE_USER_ID       (kosong)
+gv_req_remarks TYPE        ZCP_DE_REMARKS       (kosong)
+gv_cnt_pending TYPE        I                    (kosong)
+gv_error       TYPE        STRING               (kosong)
+gv_info        TYPE        STRING               (kosong)
+gt_items       TYPE        TT_ITMROW            (kosong)
+gt_result      TYPE        TT_RESULT            (kosong)
+
+
+Keterangan
+----------
+
+gv_request_id  Kolom Auto DICENTANG supaya terisi otomatis dari
+               parameter URL: req_detail.htm?gv_request_id=REQ-2026-0001
+               Itu cara BSP menerima parameter tanpa menulis kode.
+
+               Layout tetap menyertakannya sebagai hidden field. Halaman
+               stateful memang mempertahankan nilainya antar permintaan,
+               tapi hidden field membuat form tetap benar walau sesinya
+               kedaluwarsa dan halaman dimuat ulang dari nol.
+
+gv_req_buyer   Buyer pada request. Dipisahkan dari gv_buyer_id yang
+               berisi buyer milik USER yang sedang login -- keduanya
+               berbeda dan menyamakannya akan membuat Sales melihat
+               request buyer lain.
+
+gv_cnt_pending Jumlah item yang masih berstatus P. Nol berarti tidak
+               ada lagi yang bisa diputuskan, dan tombol Approve
+               maupun Reject disembunyikan.
+
+gt_result      Hasil per item setelah tombol ditekan. Kosong berarti
+               belum ada aksi pada permintaan ini.

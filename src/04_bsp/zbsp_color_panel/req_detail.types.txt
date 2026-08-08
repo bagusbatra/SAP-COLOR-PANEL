@@ -1,0 +1,63 @@
+Type Definitions untuk req_detail.htm
+=====================================
+
+DIPASTE ke tab "Type Definitions" di SE80.
+
+--- SALIN MULAI BARIS BERIKUT ---
+
+TYPES: BEGIN OF ty_itmrow,
+         so_item       TYPE posnr,
+         matnr         TYPE matnr,
+         maktx         TYPE maktx,
+         menge         TYPE zcp_request_itm-menge,
+         meins         TYPE meins,
+         status        TYPE zcp_de_itm_st,
+         reject_reason TYPE zcp_de_reason,
+         dcp_id        TYPE zcp_de_dcp_id,
+         color_code    TYPE zcp_de_color_code,
+         decided_by    TYPE zcp_de_user_id,
+         blocked       TYPE c LENGTH 1,
+         block_reason  TYPE string,
+       END OF ty_itmrow.
+
+TYPES: BEGIN OF ty_result,
+         so_item TYPE posnr,
+         matnr   TYPE matnr,
+         success TYPE c LENGTH 1,
+         message TYPE string,
+       END OF ty_result.
+
+TYPES: tt_itmrow TYPE STANDARD TABLE OF ty_itmrow WITH DEFAULT KEY,
+       tt_result TYPE STANDARD TABLE OF ty_result WITH DEFAULT KEY.
+
+--- SALIN SAMPAI BARIS DI ATAS ---
+
+
+blocked dan block_reason
+------------------------
+
+Diisi saat halaman dimuat, untuk item yang masih berstatus P tapi
+sebenarnya sudah tidak bisa di-approve lagi:
+
+  "Material sudah punya Color Code KW00001"
+  "SO + item ini sudah pernah di-import"
+
+Keduanya bisa terjadi setelah request dibuat. Sales membuat request
+pagi hari, Admin memprosesnya sore hari, dan di antaranya ada request
+lain untuk material yang sama yang sudah di-approve lebih dulu.
+
+Menandainya di layar lebih baik daripada membiarkan Admin mencentang
+lalu ditolak saat menekan tombol. Penolakan tetap terjadi di
+OnInputProcessing -- penandaan ini kenyamanan, bukan pengamanan.
+
+
+ty_result: kenapa hasil ditampilkan per item
+--------------------------------------------
+
+Inilah yang membedakan sistem ini dari prototype. Prototype membatalkan
+seluruh approve begitu satu material bentrok; di sini tiap material
+diputuskan sendiri-sendiri.
+
+Konsekuensinya satu klik bisa menghasilkan sebagian berhasil dan
+sebagian gagal. Pesan tunggal "berhasil" atau "gagal" akan berbohong
+di kasus itu, jadi hasilnya harus ditampilkan baris demi baris.
