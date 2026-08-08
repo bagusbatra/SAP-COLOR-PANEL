@@ -94,17 +94,14 @@ tailwind.config = { theme: { extend: { colors: {
         </div>
 
         <div>
-          <label class="block text-xs text-slate-500 mb-1">Buyer</label>
-          <select name="sel_buyer" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-            <option value="">-- tanpa buyer --</option>
-            <% DATA: ls_bo TYPE ty_buyer. %>
-            <% LOOP AT gt_buyers INTO ls_bo. %>
-            <option value="<%= ls_bo-buyer_id %>">
-              <%= ls_bo-buyer_name %> (<%= ls_bo-buyer_id %>)
-            </option>
-            <% ENDLOOP. %>
-          </select>
-          <div class="text-xs text-slate-400 mt-1">Wajib untuk role SALES</div>
+          <label class="block text-xs text-slate-500 mb-1">Buyer (Nomor Pelanggan)</label>
+          <input type="text" name="sel_buyer"
+                 class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono"/>
+          <div class="text-xs text-slate-400 mt-1">
+            Wajib untuk role SALES. Boleh tanpa nol di depan &mdash;
+            nomornya dicek ke master pelanggan SAP saat disimpan.
+            Kosongkan untuk melepas pemetaan buyer.
+          </div>
         </div>
 
         <div>
@@ -180,8 +177,9 @@ tailwind.config = { theme: { extend: { colors: {
       memberi atau mencabut role lewat <span class="font-mono">PFCG</span>, dan jangan lupa
       <span class="font-mono">User Comparison</span> supaya penugasannya masuk ke
       <span class="font-mono">AGR_USERS</span>;
-      master buyer lewat <span class="font-mono">SM30</span> atas
-      <span class="font-mono">ZCP_BUYER</span>.
+      master pelanggan lewat <span class="font-mono">XD01</span> /
+      <span class="font-mono">XD02</span> &mdash; Color Panel tidak punya daftar buyer
+      sendiri, semuanya dibaca dari <span class="font-mono">KNA1</span>.
     </div>
 
   </div>

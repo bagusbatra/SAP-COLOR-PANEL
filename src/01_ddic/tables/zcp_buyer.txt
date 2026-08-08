@@ -1,8 +1,70 @@
-TABLE ZCP_BUYER
-Short Description: Color Panel - Master Buyer
-Delivery Class: A
-Data Class: APPL1   Size Category: 1
-Table View Maintenance: Display/Maintenance Allowed
+TABLE ZCP_BUYER -- DIPENSIUNKAN 8 Agustus 2026
+==============================================
+
+Tabel ini TIDAK DIPAKAI LAGI. Jangan diisi, jangan dibaca dari kode
+baru, dan jangan dibuatkan Table Maintenance Generator.
+
+Definisi lamanya sengaja tidak dihapus dari file ini supaya kalau kelak
+ada yang menemukan tabelnya masih hidup di SE11, jelas kenapa ia ada
+dan kenapa ditinggalkan.
+
+
+Kenapa dipensiunkan
+-------------------
+
+Dari empat belas kolomnya, kode hanya pernah memakai dua: BUYER_NAME
+dan IS_ACTIVE.
+
+BUYER_NAME digantikan KNA1-NAME1, dan itu lebih baik: nama yang tampil
+selalu yang berlaku sekarang, bukan salinan yang dibuat saat baris
+ZCP_BUYER dibuat dan tidak pernah disegarkan lagi.
+
+IS_ACTIVE digantikan penanda blokir milik SAP sendiri:
+
+  KNA1-LOEVM   ditandai untuk dihapus
+  KNA1-AUFSD   diblokir untuk order (blok pusat)
+
+Keduanya di KNA1, jadi tidak perlu membaca KNVV dan tidak perlu tahu
+sales area. Memakai penanda SAP berarti sekali pelanggan diblokir di
+master, seluruh sistem ikut menolak. Daftar tandingan seperti ZCP_BUYER
+justru berbahaya: ia bisa ketinggalan, dan yang ketinggalan akan tetap
+dipercaya karena kelihatan lebih dekat.
+
+Sepuluh kolom sisanya -- COMPANY, COUNTRY, CONTACT, EMAIL, PHONE,
+REMARKS, dan empat kolom audit -- tidak pernah dibaca siapa pun sejak
+tabel ini dibuat.
+
+
+Yang TIDAK ikut dipensiunkan
+----------------------------
+
+Data element ZCP_DE_BUYER_ID tetap dipakai empat tabel lain:
+
+  ZCP_USER        BUYER_ID   pemetaan Sales ke pelanggan
+  ZCP_REQUEST     BUYER_ID   pelanggan pemilik request
+  ZCP_DCP_HDR     BUYER_ID   pelanggan pemilik DCP
+  ZCP_COLOR_CODE  BUYER_ID   pelanggan pemilik Color Code
+
+Keempatnya berisi KUNNR apa adanya. Tidak ada yang berubah di sana.
+
+
+Langkah menghapus tabelnya dari SE11
+------------------------------------
+
+Opsional. Tabelnya kosong dan tidak dibaca siapa pun, jadi membiarkannya
+hidup tidak merusak apa-apa selain menambah satu objek yang membingungkan.
+
+  1. SE11 -> ZCP_BUYER -> Delete
+  2. Kalau ada keluhan objek masih dipakai, cari pemakainya dengan
+     Where-Used List lebih dulu -- jangan dipaksa
+
+Table Maintenance Generator untuk tabel ini tidak pernah dibuat, dan
+memang tidak perlu lagi. Task 3 Step 5f dengan sendirinya batal.
+
+
+================================================================
+DEFINISI LAMA, untuk rujukan saja
+================================================================
 
 Field           Key  Data Element / Type   Keterangan
 --------------------------------------------------------------------
@@ -16,13 +78,7 @@ EMAIL                CHAR100               Alamat surel
 PHONE                CHAR20                Nomor telepon
 IS_ACTIVE            CHAR1                 X = aktif
 REMARKS              ZCP_DE_REMARKS        Catatan
-CREATED_BY           ZCP_DE_USER_ID        USER_ID, bukan SY-UNAME
+CREATED_BY           ZCP_DE_USER_ID        USER_ID
 CREATED_AT           TIMESTAMP             Waktu dibuat
 CHANGED_BY           ZCP_DE_USER_ID        USER_ID
 CHANGED_AT           TIMESTAMP             Waktu ubah
-
-Tidak ada secondary index.
-
-Catatan: satu-satunya tabel yang dibuatkan Table Maintenance Generator.
-Function Group ZFGP_COLOR_PANEL, authorization group &NC&, one-step.
-Dimaintain lewat SM30, tanpa halaman BSP.

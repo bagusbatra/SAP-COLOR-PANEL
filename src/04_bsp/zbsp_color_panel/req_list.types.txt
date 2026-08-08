@@ -9,7 +9,7 @@ TYPES: BEGIN OF ty_reqrow,
          request_id   TYPE zcp_de_request_id,
          so_number    TYPE vbeln,
          buyer_id     TYPE zcp_de_buyer_id,
-         buyer_name   TYPE zcp_buyer-buyer_name,
+         buyer_name   TYPE kna1-name1,
          request_date TYPE datum,
          status       TYPE zcp_de_req_st,
          sales_user   TYPE zcp_de_user_id,
@@ -25,13 +25,18 @@ TYPES: BEGIN OF ty_itmstat,
          status     TYPE zcp_de_itm_st,
        END OF ty_itmstat.
 
+TYPES: BEGIN OF ty_kunnr,
+         kunnr TYPE kna1-kunnr,
+       END OF ty_kunnr.
+
 TYPES: BEGIN OF ty_buyer,
-         buyer_id   TYPE zcp_de_buyer_id,
-         buyer_name TYPE zcp_buyer-buyer_name,
+         kunnr TYPE kna1-kunnr,
+         name1 TYPE kna1-name1,
        END OF ty_buyer.
 
 TYPES: tt_reqrow  TYPE STANDARD TABLE OF ty_reqrow  WITH DEFAULT KEY,
        tt_itmstat TYPE STANDARD TABLE OF ty_itmstat WITH DEFAULT KEY,
+       tt_kunnr   TYPE STANDARD TABLE OF ty_kunnr   WITH DEFAULT KEY,
        tt_buyer   TYPE STANDARD TABLE OF ty_buyer   WITH DEFAULT KEY.
 
 --- SALIN SAMPAI BARIS DI ATAS ---
@@ -52,3 +57,13 @@ Keempat penghitung dibaca dari ZCP_REQUEST_ITM, bukan disimpan di
 header. Menyimpannya di header berarti ada dua sumber kebenaran yang
 harus dijaga tetap sama, dan yang salah akan tetap dipercaya karena
 kelihatan lebih dekat.
+
+
+Kenapa ty_kunnr ada sendiri
+---------------------------
+
+Pendorong FOR ALL ENTRIES ke KNA1. ZCP_DE_BUYER_ID dan KNA1-KUNNR
+sama-sama CHAR10 sehingga sebenarnya cocok, tapi ikatan tipe yang
+eksplisit membuat pembacaannya tidak bergantung pada kebetulan itu --
+kalau salah satu berubah panjang kelak, kegagalannya terjadi di sini
+dengan pesan yang jelas, bukan di tempat lain yang tidak berhubungan.

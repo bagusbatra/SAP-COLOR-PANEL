@@ -9,7 +9,7 @@ tipe di bawah hanya dipakai menyusun tampilan, tidak disimpan ke
 database dan tidak dipakai halaman lain. Membuatnya sebagai objek DDIC
 hanya menambah empat objek yang harus dirawat tanpa manfaat.
 
-Perhatikan tipe field mengacu ke kolom tabel (mis. zcp_buyer-buyer_name)
+Perhatikan tipe field mengacu ke kolom tabel (mis. kna1-name1)
 alih-alih menuliskan panjangnya sendiri. Kalau kolomnya kelak berubah,
 tipe di sini ikut berubah dan tidak ada yang perlu diingat.
 
@@ -34,20 +34,21 @@ TYPES: BEGIN OF ty_usermap,
          full_name  TYPE string,
          role       TYPE string,
          buyer_id   TYPE zcp_de_buyer_id,
-         buyer_name TYPE zcp_buyer-buyer_name,
+         buyer_name TYPE kna1-name1,
          is_active  TYPE zcp_user-is_active,
          has_row    TYPE c LENGTH 1,
        END OF ty_usermap.
 
 TYPES: BEGIN OF ty_buyer,
          buyer_id   TYPE zcp_de_buyer_id,
-         buyer_name TYPE zcp_buyer-buyer_name,
+         buyer_name TYPE kna1-name1,
        END OF ty_buyer.
 
 TYPES: tt_assign  TYPE STANDARD TABLE OF ty_assign  WITH DEFAULT KEY,
        tt_uname   TYPE STANDARD TABLE OF ty_uname   WITH DEFAULT KEY,
        tt_name    TYPE STANDARD TABLE OF ty_name    WITH DEFAULT KEY,
        tt_usermap TYPE STANDARD TABLE OF ty_usermap WITH DEFAULT KEY,
+       tt_kunnr   TYPE STANDARD TABLE OF ty_kunnr   WITH DEFAULT KEY,
        tt_buyer   TYPE STANDARD TABLE OF ty_buyer   WITH DEFAULT KEY.
 
 --- SALIN SAMPAI BARIS DI ATAS ---

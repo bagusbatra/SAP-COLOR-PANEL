@@ -21,7 +21,9 @@ DATA: lv_event    TYPE string,
       lv_vbeln    TYPE vbak-vbeln,
       lv_kunnr    TYPE vbak-kunnr,
       lv_vbtyp    TYPE vbak-vbtyp,
-      lv_bname    TYPE zcp_buyer-buyer_name,
+      lv_bname    TYPE kna1-name1,
+      lv_loevm    TYPE kna1-loevm,
+      lv_aufsd    TYPE kna1-aufsd,
       lv_dup      TYPE zcp_de_request_id,
       lv_ts       TYPE timestamp,
       lv_year     TYPE n LENGTH 4,
@@ -151,35 +153,42 @@ ENDIF.
 
 gv_so_kunnr = lv_kunnr.
 
-*&--- Buyer harus terdaftar di ZCP_BUYER --------------------------------
-* Sejak 6 Agustus 2026 BUYER_ID = KUNNR, jadi tidak ada tabel perantara.
+*&--- Buyer dibaca langsung dari KNA1 ----------------------------------
+* Keputusan 8 Agustus 2026: ZCP_BUYER dipensiunkan. Tidak ada lagi
+* daftar buyer yang harus dirawat terpisah -- nama diambil dari master
+* pelanggan SAP setiap kali dibutuhkan, jadi selalu terkini.
+*
+* Penyaringan pelanggan bermasalah memakai penanda SAP sendiri:
+*   LOEVM  ditandai untuk dihapus
+*   AUFSD  diblokir untuk order (blok pusat, bukan per area penjualan)
+* Keduanya ada di KNA1, jadi tidak perlu membaca KNVV dan tidak perlu
+* tahu sales area. Memakai penanda SAP berarti sekali diblokir di
+* master pelanggan, seluruh sistem ikut menolak -- tidak ada daftar
+* tandingan yang bisa ketinggalan.
 
-CLEAR lv_bname.
-SELECT SINGLE buyer_name INTO lv_bname
-  FROM zcp_buyer
-  WHERE buyer_id  = lv_kunnr
-    AND is_active = 'X'.
+CLEAR: lv_bname, lv_loevm, lv_aufsd.
+SELECT SINGLE name1 loevm aufsd INTO (lv_bname, lv_loevm, lv_aufsd)
+  FROM kna1
+  WHERE kunnr = lv_kunnr.
 
 IF sy-subrc <> 0.
-* Dibedakan: belum terdaftar sama sekali, atau terdaftar tapi
-* dinonaktifkan. Tindak lanjutnya berbeda -- yang pertama perlu
-* pendaftaran, yang kedua perlu keputusan kenapa dulu dimatikan.
-  CLEAR lv_bname.
-  SELECT SINGLE buyer_name INTO lv_bname
-    FROM zcp_buyer
-    WHERE buyer_id = lv_kunnr.
+  CONCATENATE 'Pelanggan' lv_kunnr 'pada SO ini tidak ada di master'
+              'pelanggan KNA1. Periksa datanya lewat XD03.'
+         INTO gv_error SEPARATED BY space.
+  RETURN.
+ENDIF.
 
-  IF sy-subrc = 0.
-    CONCATENATE 'Buyer' lv_kunnr lv_bname 'terdaftar tapi sedang'
-                'dinonaktifkan (IS_ACTIVE bukan X).'
-           INTO gv_error SEPARATED BY space.
-  ELSE.
-    CONCATENATE 'Pelanggan' lv_kunnr 'pada SO ini belum terdaftar sebagai'
-                'buyer Color Panel. Tambahkan barisnya di tabel ZCP_BUYER'
-                'dengan BUYER_ID persis sama dengan nomor pelanggan itu'
-                'dan IS_ACTIVE = X.'
-           INTO gv_error SEPARATED BY space.
-  ENDIF.
+IF lv_loevm = 'X'.
+  CONCATENATE 'Pelanggan' lv_kunnr lv_bname 'ditandai untuk dihapus'
+              'di master pelanggan.'
+         INTO gv_error SEPARATED BY space.
+  RETURN.
+ENDIF.
+
+IF lv_aufsd <> space.
+  CONCATENATE 'Pelanggan' lv_kunnr lv_bname 'sedang diblokir untuk'
+              'order di master pelanggan (KNA1-AUFSD).'
+         INTO gv_error SEPARATED BY space.
   RETURN.
 ENDIF.
 

@@ -22,10 +22,12 @@ DATA: lv_event   TYPE string,
       lv_user    TYPE zcp_de_user_id,
       lv_buyer   TYPE zcp_de_buyer_id,
       lv_active  TYPE c LENGTH 1,
-      lv_dummy   TYPE c LENGTH 1,
       lv_bname   TYPE usr21-bname,
       lv_chk     TYPE usr21-bname,
       lv_name    TYPE ad_namtext,
+      lv_bkunnr  TYPE kna1-kunnr,
+      lv_bname   TYPE kna1-name1,
+      lv_loevm   TYPE kna1-loevm,
       lv_ts      TYPE timestamp,
       ls_row     TYPE zcp_user,
       lt_agr     TYPE STANDARD TABLE OF agr_name,
@@ -139,23 +141,38 @@ ENDIF.
 
 *&--- Validasi: buyer harus ada dan aktif ------------------------------
 
+* Divalidasi ke master pelanggan SAP, bukan ke daftar buatan sendiri.
+* ZCP_BUYER dipensiunkan 8 Agustus 2026.
 IF lv_buyer IS NOT INITIAL.
-  CLEAR lv_dummy.
-  SELECT SINGLE is_active INTO lv_dummy
-    FROM zcp_buyer
-    WHERE buyer_id = lv_buyer.
+
+* Terima ketikan tanpa nol di depan: 12345 sama dengan 0000012345
+  CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+    EXPORTING
+      input  = lv_buyer
+    IMPORTING
+      output = lv_bkunnr.
+
+  lv_buyer = lv_bkunnr.
+
+  CLEAR: lv_bname, lv_loevm.
+  SELECT SINGLE name1 loevm INTO (lv_bname, lv_loevm)
+    FROM kna1
+    WHERE kunnr = lv_bkunnr.
 
   IF sy-subrc <> 0.
-    CONCATENATE 'Buyer' lv_buyer 'tidak ditemukan di master buyer.'
+    CONCATENATE 'Pelanggan' lv_bkunnr 'tidak ada di master pelanggan'
+                'KNA1. Periksa nomornya lewat XD03.'
            INTO gv_error SEPARATED BY space.
     RETURN.
   ENDIF.
 
-  IF lv_dummy <> 'X'.
-    CONCATENATE 'Buyer' lv_buyer 'sedang tidak aktif.'
+  IF lv_loevm = 'X'.
+    CONCATENATE 'Pelanggan' lv_bkunnr lv_bname 'ditandai untuk dihapus'
+                'di master pelanggan.'
            INTO gv_error SEPARATED BY space.
     RETURN.
   ENDIF.
+
 ENDIF.
 
 *&--- Validasi: Sales wajib punya buyer --------------------------------

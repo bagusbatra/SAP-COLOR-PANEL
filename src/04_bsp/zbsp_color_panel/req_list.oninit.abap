@@ -26,6 +26,8 @@ DATA: lt_hdr      TYPE STANDARD TABLE OF zcp_request,
       ls_itm      TYPE ty_itmstat,
       lt_buyer    TYPE tt_buyer,
       ls_buyer    TYPE ty_buyer,
+      lt_kunnr    TYPE tt_kunnr,
+      ls_kunnr    TYPE ty_kunnr,
       ls_row      TYPE ty_reqrow,
       lv_fstat    TYPE zcp_de_req_st.
 
@@ -205,9 +207,26 @@ SELECT request_id status INTO TABLE lt_itm
   FOR ALL ENTRIES IN lt_hdr
   WHERE request_id = lt_hdr-request_id.
 
-SELECT buyer_id buyer_name INTO TABLE lt_buyer
-  FROM zcp_buyer.
-SORT lt_buyer BY buyer_id.
+* Nama buyer dibaca langsung dari master pelanggan SAP. Sejak
+* 8 Agustus 2026 tidak ada tabel ZCP_BUYER -- nama yang tampil selalu
+* yang berlaku sekarang, bukan salinan yang dibuat saat request dibuat.
+CLEAR lt_kunnr.
+LOOP AT lt_hdr INTO ls_hdr.
+  CLEAR ls_kunnr.
+  ls_kunnr-kunnr = ls_hdr-buyer_id.
+  APPEND ls_kunnr TO lt_kunnr.
+ENDLOOP.
+SORT lt_kunnr BY kunnr.
+DELETE ADJACENT DUPLICATES FROM lt_kunnr COMPARING kunnr.
+
+CLEAR lt_buyer.
+IF lt_kunnr IS NOT INITIAL.
+  SELECT kunnr name1 INTO TABLE lt_buyer
+    FROM kna1
+    FOR ALL ENTRIES IN lt_kunnr
+    WHERE kunnr = lt_kunnr-kunnr.
+  SORT lt_buyer BY kunnr.
+ENDIF.
 
 LOOP AT lt_hdr INTO ls_hdr.
 
@@ -220,11 +239,14 @@ LOOP AT lt_hdr INTO ls_hdr.
   ls_row-sales_user   = ls_hdr-sales_user.
   ls_row-remarks      = ls_hdr-remarks.
 
+  CLEAR ls_kunnr.
+  ls_kunnr-kunnr = ls_hdr-buyer_id.
+
   CLEAR ls_buyer.
   READ TABLE lt_buyer INTO ls_buyer
-       WITH KEY buyer_id = ls_hdr-buyer_id BINARY SEARCH.
+       WITH KEY kunnr = ls_kunnr-kunnr BINARY SEARCH.
   IF sy-subrc = 0.
-    ls_row-buyer_name = ls_buyer-buyer_name.
+    ls_row-buyer_name = ls_buyer-name1.
   ENDIF.
 
   LOOP AT lt_itm INTO ls_itm WHERE request_id = ls_hdr-request_id.

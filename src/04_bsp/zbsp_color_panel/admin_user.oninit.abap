@@ -34,6 +34,8 @@ DATA: lt_assign   TYPE tt_assign,
       ls_name     TYPE ty_name,
       ls_map      TYPE ty_usermap,
       ls_buyer    TYPE ty_buyer,
+      lt_kunnr    TYPE tt_kunnr,
+      ls_kunnr    TYPE ty_kunnr,
       lv_idx      TYPE sy-tabix.
 
 CLEAR: gv_user_id, gv_user_name, gv_role, gv_buyer_id,
@@ -242,10 +244,32 @@ IF lt_uname IS NOT INITIAL.
   SORT lt_name BY bname.
 ENDIF.
 
-SELECT buyer_id buyer_name INTO TABLE gt_buyers
-  FROM zcp_buyer
-  WHERE is_active = 'X'.
-SORT gt_buyers BY buyer_name.
+* gt_buyers tidak lagi berisi daftar buyer terdaftar -- tabel ZCP_BUYER
+* sudah dipensiunkan 8 Agustus 2026. Isinya sekarang hanya nama
+* pelanggan untuk KUNNR yang SUDAH dipetakan ke user, semata untuk
+* ditampilkan di kolom Buyer pada tabel di bawah.
+*
+* Pemilihan buyer di form memakai input KUNNR bebas dengan validasi
+* ke KNA1, bukan dropdown: master pelanggan SAP bisa berisi ribuan
+* baris, dan memuat semuanya ke dropdown akan membuat halaman berat
+* tanpa membuat pemilihan jadi lebih mudah.
+CLEAR lt_kunnr.
+LOOP AT lt_cpuser INTO ls_cpuser WHERE buyer_id IS NOT INITIAL.
+  CLEAR ls_kunnr.
+  ls_kunnr-kunnr = ls_cpuser-buyer_id.
+  APPEND ls_kunnr TO lt_kunnr.
+ENDLOOP.
+SORT lt_kunnr BY kunnr.
+DELETE ADJACENT DUPLICATES FROM lt_kunnr COMPARING kunnr.
+
+CLEAR gt_buyers.
+IF lt_kunnr IS NOT INITIAL.
+  SELECT kunnr name1 INTO TABLE gt_buyers
+    FROM kna1
+    FOR ALL ENTRIES IN lt_kunnr
+    WHERE kunnr = lt_kunnr-kunnr.
+  SORT gt_buyers BY kunnr.
+ENDIF.
 
 LOOP AT gt_users INTO ls_map.
   lv_idx = sy-tabix.
@@ -260,11 +284,13 @@ LOOP AT gt_users INTO ls_map.
     ls_map-full_name = ls_cpuser-full_name.
 
     IF ls_map-buyer_id IS NOT INITIAL.
+      CLEAR ls_kunnr.
+      ls_kunnr-kunnr = ls_map-buyer_id.
       CLEAR ls_buyer.
       READ TABLE gt_buyers INTO ls_buyer
-           WITH KEY buyer_id = ls_map-buyer_id.
+           WITH KEY kunnr = ls_kunnr-kunnr BINARY SEARCH.
       IF sy-subrc = 0.
-        ls_map-buyer_name = ls_buyer-buyer_name.
+        ls_map-buyer_name = ls_buyer-name1.
       ENDIF.
     ENDIF.
   ENDIF.

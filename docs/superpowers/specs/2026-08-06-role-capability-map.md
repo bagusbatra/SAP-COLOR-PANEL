@@ -90,7 +90,7 @@ SALES hanya bisa membuat request untuk SO milik buyer-nya sendiri. Ini **satu-sa
 |---|:---:|:---:|:---:|:---:|
 | Cari kandidat renewal &amp; jalankan | &mdash; | Y | &mdash; | Y |
 | Tambah/ubah user &amp; pemetaan buyer | &mdash; | **?** | &mdash; | Y |
-| Tambah/ubah master buyer | &mdash; | Y | &mdash; | Y |
+| ~~Tambah/ubah master buyer~~ | &mdash; | &mdash; | &mdash; | &mdash; |
 | Tambah/ubah master Color Code | &mdash; | Y | **?** | Y |
 | Lihat Audit Log | &mdash; | &mdash; | &mdash; | Y |
 

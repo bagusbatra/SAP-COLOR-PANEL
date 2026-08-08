@@ -10,7 +10,7 @@ Rekaman kemajuan per task dan per step. Diperbarui tiap kali ada step yang seles
   - `docs/superpowers/specs/2026-07-28-color-panel-foundation-dcp-design.md` &mdash; **dengan revisi 6 Agustus di bagian akhir**
   - `docs/superpowers/specs/2026-08-06-role-capability-map.md` &mdash; peta kewenangan per role
 - **Log harian:** `report/log_activity/` &mdash; satu file per tanggal, indeks di `report/log_activity/README.md`
-- **Terakhir diperbarui:** 6 Agustus 2026
+- **Terakhir diperbarui:** 8 Agustus 2026
 
 ## Arti simbol status
 
@@ -357,7 +357,7 @@ Sumber halaman: `src/04_bsp/zbsp_color_panel/` &mdash; struktur DATAR, satu file
 | | Report | Guna | Status |
 |:---:|---|---|:---:|
 | B15 | `ZCP_FIX_USER` | Pemulihan saat user mengunci dirinya sendiri | ✅ dipakai |
-| B16 | `ZCP_ADD_BUYER` | Daftarkan pelanggan SAP jadi buyer, selama TMG belum ada | 🟡 ditulis, belum dibuat di SE38 |
+| B16 | ~~`ZCP_ADD_BUYER`~~ | Batal &mdash; `ZCP_BUYER` dipensiunkan 8 Agu, filenya dihapus | ⤷ |
 
 ---
 
@@ -373,11 +373,15 @@ Membatalkan keputusan desain nomor 2. Tidak ada `login.htm`, tidak ada password 
 
 Harga yang dibayar: setiap pemakai wajib punya SAP dialog user, dengan biaya lisensi per orang. Rinciannya di `src/01_ddic/pfcg_roles.txt`.
 
-### 2. `BUYER_ID` = `KUNNR`
+### 2. `BUYER_ID` = `KUNNR`, dan `ZCP_BUYER` dipensiunkan (8 Agustus)
 
 Nomor pelanggan SAP dipakai apa adanya sebagai `BUYER_ID`. Panjangnya sudah cocok CHAR10, dan `VBAK-KUNNR` langsung menyambung ke `ZCP_BUYER` tanpa tabel perantara. Tidak ada perubahan DDIC.
 
-Konsekuensinya tiap pelanggan harus didaftarkan sekali di `ZCP_BUYER` sebelum SO-nya bisa di-request. Itu gerbang yang disengaja, bukan kelalaian &mdash; tidak semua pelanggan memesan color panel.
+**Ditindaklanjuti 8 Agustus:** `ZCP_BUYER` dipensiunkan seluruhnya. Dari empat belas kolomnya, kode hanya memakai dua &mdash; `BUYER_NAME` yang kini dibaca dari `KNA1-NAME1`, dan `IS_ACTIVE` yang digantikan penanda blokir SAP sendiri (`KNA1-LOEVM` dan `KNA1-AUFSD`).
+
+Tidak ada lagi pendaftaran buyer. Nama yang tampil selalu terkini, bukan salinan yang dibuat sekali lalu tidak pernah disegarkan. Daftar tandingan seperti `ZCP_BUYER` justru berbahaya: ia bisa ketinggalan dari master SD, dan yang ketinggalan akan tetap dipercaya karena kelihatan lebih dekat.
+
+Ikut batal: TMG `ZCP_BUYER` (Task 3 Step 5f) dan report `ZCP_ADD_BUYER`. `ZCP_DE_BUYER_ID` di `ZCP_USER`, `ZCP_REQUEST`, `ZCP_DCP_HDR`, dan `ZCP_COLOR_CODE` tidak berubah &mdash; keempatnya tetap berisi `KUNNR`.
 
 ### 3. IT memegang akses penuh &mdash; SEMENTARA
 
@@ -426,13 +430,24 @@ Tanpa ini `REQ-2026-0001` tidak bisa dibangkitkan dan tombol Submit selalu gagal
 
 Kolom `Ext` jangan dicentang. Interval belum jadi sampai tombol Save ditekan &mdash; baris yang muncul di grid saja belum tersimpan.
 
-### 2. Isi `ZCP_BUYER` &mdash; MENGHAMBAT PENCARIAN SO
+### 2. Paste ulang lima file yang berubah 8 Agustus
 
-Pelanggan pada SO uji (`1000000008`) belum terdaftar. Buat report `ZCP_ADD_BUYER` di SE38 dari `src/03_reports/zcp_add_buyer.abap`, jalankan dengan KUNNR tersebut.
+Pemensiunan `ZCP_BUYER` menyentuh lima file. Semuanya perlu di-paste ulang ke SE80 sebelum diuji:
+
+| Halaman | Tab | File |
+|---|---|---|
+| `req_form.htm` | Page Attributes | tipe `gv_so_name` jadi `KNA1-NAME1` |
+| | OnInputProcessing | `req_form.oninputprocessing.abap` |
+| `req_list.htm` | Type Definitions | `req_list.types.txt` |
+| | OnInitialization | `req_list.oninit.abap` |
+| `admin_user.htm` | Type Definitions | `admin_user.types.txt` |
+| | Layout | `admin_user.htm` &mdash; dropdown Buyer jadi input KUNNR |
+| | OnInitialization | `admin_user.oninit.abap` |
+| | OnInputProcessing | `admin_user.oninputprocessing.abap` |
 
 ### 3. Sisa Task 3 yang tertunda sejak Juli
 
 - SE91 message class `ZCP`
-- TMG `ZCP_BUYER` &mdash; setelah ini `ZCP_ADD_BUYER` boleh dihapus
+- ~~TMG `ZCP_BUYER`~~ &mdash; **batal**, tabelnya dipensiunkan
 
-Setelah ketiganya beres: uji `req_form.htm` sampai `REQ-2026-0001` terbentuk, lalu lanjut ke `req_detail.htm`.
+Setelah itu: uji `req_form.htm` sampai `REQ-2026-0001` terbentuk, lalu lanjut ke `req_detail.htm`.

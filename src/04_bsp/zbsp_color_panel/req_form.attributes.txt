@@ -21,7 +21,7 @@ gv_error      TYPE        STRING               (kosong)
 gv_info       TYPE        STRING               (kosong)
 gv_so_number  TYPE        VBELN                (kosong)
 gv_so_kunnr   TYPE        ZCP_DE_BUYER_ID      (kosong)
-gv_so_name    TYPE        ZCP_BUYER-BUYER_NAME (kosong)
+gv_so_name    TYPE        KNA1-NAME1           (kosong)
 gv_remarks    TYPE        ZCP_DE_REMARKS       (kosong)
 gv_found      TYPE        CHAR1                (kosong)
 gv_cnt_ok     TYPE        I                    (kosong)
@@ -38,9 +38,10 @@ gv_so_kunnr   Nomor pelanggan dari VBAK-KUNNR. Sejak 6 Agustus 2026
               BUYER_ID = KUNNR, jadi field ini langsung dipakai
               sebagai buyer request tanpa tabel perantara.
 
-gv_so_name    Nama buyer dari ZCP_BUYER. Kosong berarti pelanggan SO
-              ini belum terdaftar sebagai buyer Color Panel -- dan
-              itu menghalangi pembuatan request.
+gv_so_name    Nama pelanggan dari KNA1-NAME1, dibaca langsung setiap
+              kali halaman dipakai. Sejak 8 Agustus 2026 tidak ada
+              lagi tabel ZCP_BUYER, jadi namanya selalu terkini dan
+              tidak bisa basi seperti snapshot.
 
 gv_found      'X' bila pencarian SO berhasil. Dipakai layout untuk
               memutuskan apakah tabel material dan tombol Submit
