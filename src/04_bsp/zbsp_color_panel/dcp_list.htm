@@ -1,0 +1,211 @@
+<%@page language="abap"%>
+<html>
+<head>
+<title>DCP &mdash; Color Panel</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<script>
+tailwind.config = { theme: { extend: { colors: {
+  navy: '#1E3A8A', navydark: '#1E293B', navylight: '#3B4E9E' } } } }
+</script>
+</head>
+<body class="bg-slate-100">
+<div class="flex">
+
+<aside class="w-64 bg-navydark text-white flex flex-col min-h-screen">
+  <div class="px-5 py-5 border-b border-white border-opacity-10">
+    <div class="text-lg font-bold">Color Panel</div>
+    <div class="text-xs text-gray-400">PT. Kayu Mebel Indonesia</div>
+  </div>
+  <nav class="flex-1 py-3">
+
+    <a href="main.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-gauge w-4"></i> Dashboard
+    </a>
+
+    <% IF gv_as_sales = 'X' OR gv_as_admin = 'X'. %>
+    <a href="req_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-envelope-open-text w-4"></i> Request DCP
+    </a>
+    <% ENDIF. %>
+
+    <% IF gv_as_admin = 'X' OR gv_as_qc = 'X'. %>
+    <a href="dcp_list.htm" class="flex items-center gap-3 px-5 py-2 text-sm bg-navy text-white">
+      <i class="fa-solid fa-flask w-4"></i> DCP
+    </a>
+    <% ENDIF. %>
+
+    <% IF gv_as_it = 'X'. %>
+    <a href="admin_user.htm" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-300 hover:bg-navy hover:text-white">
+      <i class="fa-solid fa-users w-4"></i> User
+    </a>
+    <% ENDIF. %>
+
+  </nav>
+  <div class="px-5 py-4 border-t border-white border-opacity-10">
+    <div class="text-sm font-semibold text-white"><%= gv_user_name %></div>
+    <div class="text-xs text-gray-400"><%= gv_user_id %> &middot; <%= gv_role %></div>
+  </div>
+</aside>
+
+<main class="flex-1">
+
+  <div class="bg-white border-b border-slate-200 px-8 py-5">
+    <h1 class="text-2xl font-bold text-slate-800">DCP</h1>
+    <p class="text-sm text-slate-500">
+      Development Color Panel &mdash; panel percobaan sebelum warna disetujui jadi master
+    </p>
+  </div>
+
+  <div class="p-8">
+
+    <form method="get" class="bg-white rounded-xl shadow-sm p-4 mb-6 flex items-center gap-3 flex-wrap">
+      <label class="text-sm text-slate-600">Status</label>
+      <select name="gv_filter" class="px-3 py-2 border border-slate-300 rounded-lg text-sm">
+        <option value=""  <% IF gv_filter IS INITIAL. %>selected="selected"<% ENDIF. %>>Semua</option>
+        <option value="O" <% IF gv_filter = 'O'. %>selected="selected"<% ENDIF. %>>Open</option>
+        <option value="C" <% IF gv_filter = 'C'. %>selected="selected"<% ENDIF. %>>Closed</option>
+        <option value="R" <% IF gv_filter = 'R'. %>selected="selected"<% ENDIF. %>>Rejected</option>
+      </select>
+
+      <label class="text-sm text-slate-600 ml-2">Masa berlaku</label>
+      <select name="gv_expiry" class="px-3 py-2 border border-slate-300 rounded-lg text-sm">
+        <option value=""    <% IF gv_expiry IS INITIAL. %>selected="selected"<% ENDIF. %>>Semua</option>
+        <option value="REM" <% IF gv_expiry = 'REM'. %>selected="selected"<% ENDIF. %>>Mendekati expired</option>
+        <option value="EXP" <% IF gv_expiry = 'EXP'. %>selected="selected"<% ENDIF. %>>Sudah expired</option>
+      </select>
+
+      <button type="submit" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium">
+        <i class="fa-solid fa-filter"></i> Saring
+      </button>
+    </form>
+
+    <% IF gt_dcp IS INITIAL. %>
+
+    <div class="bg-white rounded-xl shadow-sm p-12 text-center">
+      <div class="text-slate-300 text-5xl mb-3"><i class="fa-solid fa-flask"></i></div>
+      <% IF gv_cnt_all = 0. %>
+        <div class="font-semibold text-slate-700 mb-1">Belum ada DCP</div>
+        <div class="text-sm text-slate-500">
+          DCP terbentuk otomatis saat Admin menyetujui material pada sebuah
+          Request &mdash; satu material menghasilkan satu DCP.
+        </div>
+      <% ELSE. %>
+        <div class="font-semibold text-slate-700 mb-1">Tidak ada yang cocok dengan saringan</div>
+        <div class="text-sm text-slate-500">
+          Ada <%= gv_cnt_all %> DCP di sistem, tapi tidak satu pun memenuhi
+          saringan yang dipilih. Coba ubah saringannya.
+        </div>
+      <% ENDIF. %>
+    </div>
+
+    <% ELSE. %>
+
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-slate-600">
+          <tr>
+            <th class="text-left px-5 py-3 font-semibold">DCP ID</th>
+            <th class="text-left px-5 py-3 font-semibold">Color Code</th>
+            <th class="text-left px-5 py-3 font-semibold">Material</th>
+            <th class="text-left px-5 py-3 font-semibold">Buyer</th>
+            <th class="text-left px-5 py-3 font-semibold">Panel</th>
+            <th class="text-left px-5 py-3 font-semibold">Masa berlaku</th>
+            <th class="text-left px-5 py-3 font-semibold">Status</th>
+            <th class="text-left px-5 py-3 font-semibold">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% DATA: ls_d TYPE ty_dcprow. %>
+          <% LOOP AT gt_dcp INTO ls_d. %>
+          <tr>
+            <td class="px-5 py-3">
+              <div class="font-mono font-semibold"><%= ls_d-dcp_id %></div>
+              <div class="text-xs text-slate-400 font-mono">
+                SO <%= ls_d-so_number %> / <%= ls_d-so_item %>
+              </div>
+            </td>
+            <td class="px-5 py-3 font-mono"><%= ls_d-color_code %></td>
+            <td class="px-5 py-3">
+              <div class="font-mono text-xs"><%= ls_d-matnr %></div>
+              <div class="text-slate-600"><%= ls_d-maktx %></div>
+            </td>
+            <td class="px-5 py-3">
+              <div><%= ls_d-buyer_name %></div>
+              <div class="text-xs text-slate-400 font-mono"><%= ls_d-buyer_id %></div>
+            </td>
+            <td class="px-5 py-3">
+              <div class="text-slate-700"><%= ls_d-cnt_ap %> / <%= ls_d-qty_total %> approved</div>
+              <div class="text-xs mt-1 flex gap-1 flex-wrap">
+                <% IF ls_d-cnt_na > 0. %>
+                <span class="px-1 rounded bg-slate-100 text-slate-600"><%= ls_d-cnt_na %> NA</span>
+                <% ENDIF. %>
+                <% IF ls_d-cnt_ak > 0. %>
+                <span class="px-1 rounded bg-blue-100 text-blue-800"><%= ls_d-cnt_ak %> AK</span>
+                <% ENDIF. %>
+                <% IF ls_d-cnt_sb > 0. %>
+                <span class="px-1 rounded bg-amber-100 text-amber-800"><%= ls_d-cnt_sb %> SB</span>
+                <% ENDIF. %>
+                <% IF ls_d-cnt_rj > 0. %>
+                <span class="px-1 rounded bg-red-100 text-red-800"><%= ls_d-cnt_rj %> RJ</span>
+                <% ENDIF. %>
+                <% IF ls_d-cnt_ob > 0. %>
+                <span class="px-1 rounded bg-slate-100 text-slate-500"><%= ls_d-cnt_ob %> OB</span>
+                <% ENDIF. %>
+              </div>
+            </td>
+            <td class="px-5 py-3">
+              <% IF ls_d-expire_date IS INITIAL. %>
+                <span class="text-slate-400">belum ditentukan</span>
+              <% ELSE. %>
+                <div><%= ls_d-expire_date %></div>
+                <% IF ls_d-flag_exp = 'X'. %>
+                <span class="px-1 rounded text-xs bg-red-100 text-red-800">Expired</span>
+                <% ELSEIF ls_d-flag_rem = 'X'. %>
+                <span class="px-1 rounded text-xs bg-amber-100 text-amber-800">Mendekati</span>
+                <% ENDIF. %>
+              <% ENDIF. %>
+            </td>
+            <td class="px-5 py-3">
+              <% IF ls_d-status = 'O'. %>
+                <span class="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">Open</span>
+              <% ELSEIF ls_d-status = 'C'. %>
+                <span class="px-2 py-1 rounded text-xs bg-emerald-100 text-emerald-800">Closed</span>
+              <% ELSE. %>
+                <span class="px-2 py-1 rounded text-xs bg-red-100 text-red-800">Rejected</span>
+              <% ENDIF. %>
+            </td>
+            <td class="px-5 py-3">
+              <a href="dcp_detail.htm?gv_dcp_id=<%= ls_d-dcp_id %>"
+                 class="text-navy hover:underline font-medium">Detail</a>
+            </td>
+          </tr>
+          <% ENDLOOP. %>
+        </tbody>
+      </table>
+    </div>
+
+    <% ENDIF. %>
+
+    <div class="mt-4 px-4 py-3 rounded-lg bg-slate-50 border-l-4 border-navy text-xs text-slate-600">
+      <strong>Kolom Panel menunjukkan kemajuan, bukan status header.</strong>
+      Status header hanya mengenal Open, Closed, dan Rejected &mdash; itu tidak
+      memberi tahu apakah pekerjaannya baru dimulai atau tinggal menunggu satu
+      approval terakhir. Singkatannya:
+      <span class="font-mono">NA</span> belum dicat &middot;
+      <span class="font-mono">AK</span> sudah dicat &middot;
+      <span class="font-mono">SB</span> menunggu QC &middot;
+      <span class="font-mono">AP</span> disetujui &middot;
+      <span class="font-mono">RJ</span> ditolak &middot;
+      <span class="font-mono">OB</span> obsolete.
+    </div>
+
+  </div>
+</main>
+
+</div>
+</body>
+</html>

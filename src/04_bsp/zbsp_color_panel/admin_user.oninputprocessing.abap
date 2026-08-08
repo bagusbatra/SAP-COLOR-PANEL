@@ -26,7 +26,7 @@ DATA: lv_event   TYPE string,
       lv_chk     TYPE usr21-bname,
       lv_name    TYPE ad_namtext,
       lv_bkunnr  TYPE kna1-kunnr,
-      lv_bname   TYPE kna1-name1,
+      lv_kname   TYPE kna1-name1,
       lv_loevm   TYPE kna1-loevm,
       lv_ts      TYPE timestamp,
       ls_row     TYPE zcp_user,
@@ -154,8 +154,8 @@ IF lv_buyer IS NOT INITIAL.
 
   lv_buyer = lv_bkunnr.
 
-  CLEAR: lv_bname, lv_loevm.
-  SELECT SINGLE name1 loevm INTO (lv_bname, lv_loevm)
+  CLEAR: lv_kname, lv_loevm.
+  SELECT SINGLE name1 loevm INTO (lv_kname, lv_loevm)
     FROM kna1
     WHERE kunnr = lv_bkunnr.
 
@@ -167,7 +167,7 @@ IF lv_buyer IS NOT INITIAL.
   ENDIF.
 
   IF lv_loevm = 'X'.
-    CONCATENATE 'Pelanggan' lv_bkunnr lv_bname 'ditandai untuk dihapus'
+    CONCATENATE 'Pelanggan' lv_bkunnr lv_kname 'ditandai untuk dihapus'
                 'di master pelanggan.'
            INTO gv_error SEPARATED BY space.
     RETURN.

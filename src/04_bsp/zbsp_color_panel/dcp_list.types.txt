@@ -1,0 +1,76 @@
+Type Definitions untuk dcp_list.htm
+===================================
+
+DIPASTE ke tab "Type Definitions" di SE80.
+
+--- SALIN MULAI BARIS BERIKUT ---
+
+TYPES: BEGIN OF ty_dcprow,
+         dcp_id      TYPE zcp_de_dcp_id,
+         so_number   TYPE vbeln,
+         so_item     TYPE posnr,
+         matnr       TYPE matnr,
+         maktx       TYPE maktx,
+         color_code  TYPE zcp_de_color_code,
+         buyer_id    TYPE zcp_de_buyer_id,
+         buyer_name  TYPE kna1-name1,
+         qty_total   TYPE zcp_dcp_hdr-qty_total,
+         mfg_date    TYPE datum,
+         expire_date TYPE datum,
+         status      TYPE zcp_de_dcp_st,
+         cnt_na      TYPE i,
+         cnt_ak      TYPE i,
+         cnt_sb      TYPE i,
+         cnt_ap      TYPE i,
+         cnt_rj      TYPE i,
+         cnt_ob      TYPE i,
+         flag_exp    TYPE c LENGTH 1,
+         flag_rem    TYPE c LENGTH 1,
+       END OF ty_dcprow.
+
+TYPES: BEGIN OF ty_panstat,
+         dcp_id TYPE zcp_de_dcp_id,
+         status TYPE zcp_de_panel_st,
+       END OF ty_panstat.
+
+TYPES: BEGIN OF ty_kunnr,
+         kunnr TYPE kna1-kunnr,
+       END OF ty_kunnr.
+
+TYPES: BEGIN OF ty_buyer,
+         kunnr TYPE kna1-kunnr,
+         name1 TYPE kna1-name1,
+       END OF ty_buyer.
+
+TYPES: tt_dcprow  TYPE STANDARD TABLE OF ty_dcprow  WITH DEFAULT KEY,
+       tt_panstat TYPE STANDARD TABLE OF ty_panstat WITH DEFAULT KEY,
+       tt_kunnr   TYPE STANDARD TABLE OF ty_kunnr   WITH DEFAULT KEY,
+       tt_buyer   TYPE STANDARD TABLE OF ty_buyer   WITH DEFAULT KEY.
+
+--- SALIN SAMPAI BARIS DI ATAS ---
+
+
+Kenapa enam penghitung panel
+----------------------------
+
+cnt_na, cnt_ak, cnt_sb, cnt_ap, cnt_rj, cnt_ob.
+
+Status header DCP hanya mengenal tiga nilai: O (Open), C (Closed),
+R (Rejected). Itu tidak memberi tahu apa pun tentang kemajuan
+pekerjaannya. DCP berstatus O bisa berarti belum ada satu panel pun
+yang disentuh, atau tinggal menunggu satu approval terakhir.
+
+Keenam penghitung dibaca dari ZCP_DCP_ITEM, bukan disimpan di header.
+Menyimpannya di header berarti ada dua sumber kebenaran yang harus
+dijaga tetap sama.
+
+
+flag_exp dan flag_rem
+---------------------
+
+flag_exp  'X' bila EXPIRE_DATE sudah lewat
+flag_rem  'X' bila REMINDER_DATE sudah lewat tapi belum expired
+
+Keduanya hanya bermakna untuk DCP berstatus O. DCP yang sudah Closed
+atau Rejected tidak perlu diingatkan soal masa berlaku, dan menandainya
+merah hanya akan membuat daftar terlihat lebih genting dari kenyataan.

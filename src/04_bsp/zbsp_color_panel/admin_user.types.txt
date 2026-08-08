@@ -39,9 +39,13 @@ TYPES: BEGIN OF ty_usermap,
          has_row    TYPE c LENGTH 1,
        END OF ty_usermap.
 
+TYPES: BEGIN OF ty_kunnr,
+         kunnr TYPE kna1-kunnr,
+       END OF ty_kunnr.
+
 TYPES: BEGIN OF ty_buyer,
-         buyer_id   TYPE zcp_de_buyer_id,
-         buyer_name TYPE kna1-name1,
+         kunnr TYPE kna1-kunnr,
+         name1 TYPE kna1-name1,
        END OF ty_buyer.
 
 TYPES: tt_assign  TYPE STANDARD TABLE OF ty_assign  WITH DEFAULT KEY,
@@ -83,6 +87,19 @@ has_row   'X' bila user itu sudah punya baris di ZCP_USER. Dibedakan
 role      Hasil pemetaan role PFCG dengan prioritas ADMIN > IT > QC >
           SALES. Kolom ini READ-ONLY di halaman -- role diubah lewat
           PFCG, bukan di sini.
+
+
+ty_kunnr dan ty_buyer
+---------------------
+
+ty_kunnr adalah pendorong FOR ALL ENTRIES ke KNA1. ty_buyer menampung
+hasilnya: nomor pelanggan beserta namanya.
+
+Field-nya sengaja bernama kunnr dan name1, mengikuti nama kolom KNA1,
+bukan buyer_id dan buyer_name seperti sebelumnya. Sejak ZCP_BUYER
+dipensiunkan 8 Agustus 2026, sumbernya memang KNA1 -- menamai field
+seperti tabel yang sudah tidak ada hanya akan menyesatkan pembaca
+berikutnya.
 
 full_name Diisi dari ZCP_USER-FULL_NAME bila ada, kalau tidak dari
           master alamat SAP (USR21 + ADRP). Kalau keduanya kosong,

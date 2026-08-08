@@ -1,0 +1,42 @@
+Page Attributes untuk dcp_list.htm
+==================================
+
+PERINGATAN: daftar ini berbeda dari halaman lain. Jangan disalin dari
+halaman sebelah.
+
+Prasyarat: tab "Type Definitions" diisi lebih dulu dari
+dcp_list.types.txt, kalau tidak TT_DCPROW tidak dikenal.
+
+Name          Type Ref    Associated Type      Auto
+--------------------------------------------------------
+gv_user_id    TYPE        ZCP_DE_USER_ID       (kosong)
+gv_user_name  TYPE        STRING               (kosong)
+gv_role       TYPE        STRING               (kosong)
+gv_buyer_id   TYPE        ZCP_DE_BUYER_ID      (kosong)
+gv_as_sales   TYPE        CHAR1                (kosong)
+gv_as_admin   TYPE        CHAR1                (kosong)
+gv_as_qc      TYPE        CHAR1                (kosong)
+gv_as_it      TYPE        CHAR1                (kosong)
+gv_filter     TYPE        STRING               X
+gv_expiry     TYPE        STRING               X
+gv_cnt_all    TYPE        I                    (kosong)
+gt_dcp        TYPE        TT_DCPROW            (kosong)
+
+
+Keterangan
+----------
+
+gv_filter  Saringan status header: kosong (semua), 'O', 'C', 'R'.
+           Auto DICENTANG supaya bisa datang dari parameter URL,
+           misalnya dcp_list.htm?gv_filter=O dari pintasan dashboard.
+
+gv_expiry  Saringan masa berlaku: kosong (semua), 'EXP' (sudah lewat),
+           'REM' (mendekati). Auto DICENTANG, alasan yang sama.
+
+gv_cnt_all Jumlah DCP SEBELUM saringan diterapkan. Dipakai untuk
+           membedakan dua keadaan yang tampak sama di layar: memang
+           belum ada DCP sama sekali, atau ada tapi tersaring habis.
+           Tanpa ini, daftar kosong selalu terbaca sebagai "belum ada
+           data" dan orang berhenti mencari.
+
+gt_dcp     Daftar DCP beserta hitungan panel per status.

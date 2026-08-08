@@ -61,7 +61,7 @@ Konsekuensinya beberapa halaman memuat OpenSQL yang kelak pindah ke class. Itu k
 
 **Progres Jalur A:** 2 dari 11 task tuntas, 1 berjalan. Task 12&ndash;16 digantikan Jalur B.
 
-**Progres Jalur B:** fondasi tuntas, 3 dari 8 halaman aktif dan teruji, 2 halaman aktif menunggu data uji.
+**Progres Jalur B:** fondasi tuntas, **5 dari 8 halaman aktif** dan tampil benar. Yang belum dikonfirmasi ke saya: apakah `ZCP_REQUEST` dan `ZCP_REQUEST_ITM` benar-benar terisi setelah Submit &mdash; itu pembuktian yang tidak terlihat dari layar.
 
 ---
 
@@ -335,9 +335,11 @@ Sumber halaman: `src/04_bsp/zbsp_color_panel/` &mdash; struktur DATAR, satu file
 | B1 | Aplikasi BSP `ZBSP_COLOR_PANEL` di SE80 | ✅ | 6 Agu 2026 |
 | B2 | Service SICF aktif, autentikasi SAP standar | ✅ | 6 Agu 2026 |
 | B3 | Role PFCG `ZCP_IT` dibuat + User Comparison | ✅ | 6 Agu 2026 |
-| B4 | Role PFCG `ZCP_SALES`, `ZCP_ADMIN`, `ZCP_QC` | ⬜ | &mdash; |
+| B4 | Role PFCG `ZCP_SALES`, `ZCP_ADMIN`, `ZCP_QC` | ⬜ | belum dibutuhkan selama IT berakses penuh |
 | B5 | `ZCP_USER` direvisi: `PASSWORD_HASH` dan `ROLE` dibuang | ✅ | 6 Agu 2026 |
 | B6 | Potongan bersama `_shared/` (head, nav, role_detect) | ✅ | 6 Agu 2026 |
+| B17 | Interval number range `ZCP_REQ` di SNRO | ✅ | 8 Agu 2026 |
+| B18 | Interval `ZCP_COLOR`, `ZCP_DCP`, `ZCP_PHOTO`, `ZCP_AUDIT` | 🟡 | perlu dikonfirmasi |
 
 ### Halaman
 
@@ -345,9 +347,9 @@ Sumber halaman: `src/04_bsp/zbsp_color_panel/` &mdash; struktur DATAR, satu file
 |:---:|---|---|:---:|---|
 | B7 | `noaccess.htm` | Penolakan, membedakan tiga sebab | ✅ | 6 Agu 2026 |
 | B8 | `main.htm` | Dashboard + router role | ✅ | 6 Agu 2026 |
-| B9 | `admin_user.htm` | Pemetaan SAP user ke buyer (IT) | ✅ | 6 Agu 2026 |
-| B10 | `req_list.htm` | Daftar request | 🟡 | aktif, belum diuji dengan data |
-| B11 | `req_form.htm` | Input SO, pilih material, submit | 🟡 | aktif, tersendat prasyarat data |
+| B9 | `admin_user.htm` | Pemetaan SAP user ke buyer (IT) | ✅ | 6 Agu, direvisi 8 Agu (buyer dari KNA1) |
+| B10 | `req_list.htm` | Daftar request | ✅ | 8 Agu 2026 &mdash; aktif, halaman tampil benar |
+| B11 | `req_form.htm` | Input SO, pilih material, submit | ✅ | 8 Agu 2026 &mdash; aktif, halaman tampil benar |
 | B12 | `req_detail.htm` | Approval Admin per item | ⬜ | &mdash; |
 | B13 | `dcp_list.htm` | Daftar DCP | ⬜ | &mdash; |
 | B14 | `dcp_detail.htm` | Grid panel DCP | ⬜ | &mdash; |
@@ -412,42 +414,38 @@ Ditemukan saat memetakan kewenangan. Rincian dan pilihannya di `docs/superpowers
 
 ## Titik Lanjut Berikutnya
 
-Tiga hal yang menghambat pengujian `req_form.htm` sampai tuntas, urut dari yang paling menghambat.
+### 1. Buktikan datanya benar-benar tersimpan
 
-### 1. Interval number range di SNRO &mdash; MENGHAMBAT SUBMIT
+Halaman sudah tampil benar, tapi itu belum membuktikan penyimpanannya jalan. Periksa lewat SE16N:
 
-Tanpa ini `REQ-2026-0001` tidak bisa dibangkitkan dan tombol Submit selalu gagal.
+| Tabel | Harus |
+|---|---|
+| `ZCP_REQUEST` | Satu baris, `STATUS = 'P'`, `BUYER_ID` = KUNNR dari SO |
+| `ZCP_REQUEST_ITM` | **Satu baris per material yang layak**, semuanya `STATUS = 'P'` |
 
-`SNRO -> Object -> Number ranges -> Change Intervals -> Insert Interval -> Save`
+Kalau header terisi tapi itemnya kosong, `req_detail.htm` akan tampil kosong tanpa pesan error apa pun. Kegagalan diam seperti itu paling mahal ditemukan belakangan.
 
-| Object | No | From number | To number | Year |
-|---|:---:|---|---|:---:|
-| `ZCP_COLOR` | `01` | `00001` | `99999` | &mdash; |
-| `ZCP_REQ` | `01` | `0001` | `9999` | `2026` |
-| `ZCP_DCP` | `01` | `0001` | `9999` | `2026` |
-| `ZCP_PHOTO` | `01` | `000000001` | `999999999` | &mdash; |
-| `ZCP_AUDIT` | `01` | `000000000001` | `999999999999` | &mdash; |
+### 2. Interval `ZCP_COLOR` dan `ZCP_DCP` di SNRO
 
-Kolom `Ext` jangan dicentang. Interval belum jadi sampai tombol Save ditekan &mdash; baris yang muncul di grid saja belum tersimpan.
+Belum dikonfirmasi. Keduanya dipakai `req_detail.htm` untuk membangkitkan `KW00001` dan `DCP-2026-0001` saat Admin menyetujui material.
 
-### 2. Paste ulang lima file yang berubah 8 Agustus
+| Object | No | Year | From | To |
+|---|:---:|:---:|---|---|
+| `ZCP_COLOR` | `01` | &mdash; | `00001` | `99999` |
+| `ZCP_DCP` | `01` | `2026` | `0001` | `9999` |
 
-Pemensiunan `ZCP_BUYER` menyentuh lima file. Semuanya perlu di-paste ulang ke SE80 sebelum diuji:
+`ZCP_COLOR` tidak punya kolom Year &mdash; itu memang benar, penomoran Color Code tidak di-reset per tahun supaya `KW00001` tidak pernah dipakai dua kali.
 
-| Halaman | Tab | File |
-|---|---|---|
-| `req_form.htm` | Page Attributes | tipe `gv_so_name` jadi `KNA1-NAME1` |
-| | OnInputProcessing | `req_form.oninputprocessing.abap` |
-| `req_list.htm` | Type Definitions | `req_list.types.txt` |
-| | OnInitialization | `req_list.oninit.abap` |
-| `admin_user.htm` | Type Definitions | `admin_user.types.txt` |
-| | Layout | `admin_user.htm` &mdash; dropdown Buyer jadi input KUNNR |
-| | OnInitialization | `admin_user.oninit.abap` |
-| | OnInputProcessing | `admin_user.oninputprocessing.abap` |
+### 3. Bangun `req_detail.htm`
 
-### 3. Sisa Task 3 yang tertunda sejak Juli
+Halaman tempat Admin memutuskan **per material**. Inilah yang membedakan sistem ini dari prototype, yang membatalkan seluruh approve begitu satu material bentrok.
 
-- SE91 message class `ZCP`
-- ~~TMG `ZCP_BUYER`~~ &mdash; **batal**, tabelnya dipensiunkan
+Halaman ini juga yang pertama kali mengisi `ZCP_COLOR_CODE`, `ZCP_DCP_HDR`, `ZCP_DCP_ITEM`, dan `ZCP_SO_IMPORT`.
 
-Setelah itu: uji `req_form.htm` sampai `REQ-2026-0001` terbentuk, lalu lanjut ke `req_detail.htm`.
+---
+
+## Yang Menunggu Keputusan Yogi
+
+Rincian dan pilihannya di `docs/superpowers/specs/2026-08-06-role-capability-map.md` bagian 5. Yang paling menghambat: **apakah QC boleh meng-approve panel.** Jawabannya menentukan bentuk `dcp_detail.htm` dan `mcp_detail.htm`.
+
+Belum menghambat Langkah 1&ndash;3 di atas.
